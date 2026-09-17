@@ -2,6 +2,10 @@ name: Sync real Ngôi Sao Thời Trang data
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync-annie.mjs'
+      - '.github/workflows/sync-data.yml'
   schedule:
     - cron: '17 3 * * *'
 
