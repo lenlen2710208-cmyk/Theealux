@@ -1,0 +1,54 @@
+name: Apply Aetheria warm theme
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/warm-theme.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  theme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply warm luxury palette
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('styles.css')
+          s=p.read_text()
+          replacements={
+            '--bg:#f3ece7':'--bg:#f5eee9',
+            '--card:#fff8f3':'--card:#fffaf6',
+            '--card2:#fbf2ed':'--card2:#fcf3ed',
+            '--text:#332a2d':'--text:#34292c',
+            '--muted:#796b70':'--muted:#7b6b6f',
+            '--line:#e5d8d2':'--line:#e7d8d0',
+            '--primary:#865867':'--primary:#9a5966',
+            '--primary2:#ae7482':'--primary2:#c27b89',
+            '--accent:#c99768':'--accent:#c79a68',
+            '--soft:#eee0da':'--soft:#eee0da',
+            'background:linear-gradient(145deg,#b9d9d6,#789da0)':'background:radial-gradient(circle at 35% 30%,#fffaf1 0 9%,#e7b99b 24%,#b96876 62%,#7e4655 100%)',
+            'box-shadow:0 7px 22px rgba(86,126,129,.20)':'box-shadow:0 7px 22px rgba(145,78,91,.22),inset 0 1px 0 #fff8',
+            'border:1px solid #d5e6e3':'border:1px solid #f1d3c0',
+            'color:#6f8d8e':'color:#956b62',
+            'color:#91b8b5':'color:#c49a75',
+            '#b7cfcc':'#d8b9a3',
+            'background:radial-gradient(circle at 50% 40%,#d9e9e5 0,#e7ddd7 28%,transparent 64%)':'background:radial-gradient(circle at 50% 40%,#efd5c8 0,#eaded8 30%,transparent 65%)',
+            'background:linear-gradient(145deg,#435f62,#718f90)':'background:linear-gradient(145deg,#774b55,#a86b76)',
+            'box-shadow:0 24px 55px rgba(65,91,94,.20)':'box-shadow:0 24px 55px rgba(126,69,82,.20)'
+          }
+          for a,b in replacements.items(): s=s.replace(a,b)
+          p.write_text(s)
+          PY
+      - name: Commit theme
+        run: |
+          git config user.name 'Aetheria Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add styles.css
+          git diff --cached --quiet && exit 0
+          git commit -m 'ui: warm luxury Aetheria palette'
+          git push
