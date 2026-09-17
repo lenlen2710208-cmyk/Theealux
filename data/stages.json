@@ -1,16 +1,19 @@
 {
-  "version": 2,
+  "version": 3,
   "game": "Ngôi Sao Thời Trang VNG",
   "locale": "vi-VN",
   "method": "verified-stage-attributes",
-  "notes": "Stage profiles are transcribed from public Miracle Nikki stage references and translated to the Vietnamese attribute labels used by Aetheria. Item ranking is calculated only against a verified stage profile; it is not a generic item-stat ranking.",
+  "notes": "Stage profiles are transcribed from public Miracle Nikki stage references and translated to the Vietnamese attribute labels used by Aetheria. Item ranking is calculated only against a verified stage profile; it is not a generic item-stat ranking or a claimed in-game battle score.",
   "sources": [
     {"name":"Gamerch — Main quest judging coefficients","url":"https://gamerch.com/miracle-nikki/592920"},
     {"name":"Gamerch — Volume I Chapter 1 stage guide","url":"https://gamerch.com/miracle-nikki/589976"},
     {"name":"Nikki's Info — Chapter 1 stage 1-1","url":"https://ln.nikkis.info/stages/chapters/maiden/1-1"},
-    {"name":"BWIKI — Volume I Chapter 1","url":"https://wiki.biligame.com/qjnn/%E5%89%A7%E6%83%85/%E7%AC%AC%E4%B8%80%E5%8D%B7%E7%AC%AC%E4%B8%80%E7%AB%A0"}
+    {"name":"BWIKI — Volume I Chapter 1","url":"https://wiki.biligame.com/qjnn/%E5%89%A7%E6%83%85/%E7%AC%AC%E4%B8%80%E5%8D%B7%E7%AC%AC%E4%B8%80%E7%AB%A0"},
+    {"name":"Kamigame — Guild Chapter 1","url":"https://kamigame.jp/%E3%83%9F%E3%83%A9%E3%82%AF%E3%83%AB%E3%83%8B%E3%82%AD/%E3%82%AE%E3%83%AB%E3%83%89/1%E7%AB%A0/index.html"},
+    {"name":"Gamerch — Judging coefficients / Competition","url":"https://gamerch.com/miracle-nikki/590559"}
   ],
   "stages": [
+    {"group":"aihoi","id":"guild-1-1","label":"Ải hội • 1-1","name":"Pajama đi ngủ","attrs":{"cute":1,"pure":1,"simple":1,"lively":1,"warm":1},"tags":["Đồ ngủ","Đồ mặc nhà"]},
     {"group":"quyen1","id":"v1-1-1","label":"Quyển 1 • 1-1","name":"Thể thao thiếu nữ Áo La (1)","attrs":{"simple":2.93,"lively":2,"cute":2,"pure":1,"cool":1}},
     {"group":"quyen1","id":"v1-1-2","label":"Quyển 1 • 1-2","name":"Trang phục thường ngày cũng đẹp","attrs":{"simple":2.8,"elegant":2.67,"cute":1.6,"pure":3,"warm":1}},
     {"group":"quyen1","id":"v1-1-3","label":"Quyển 1 • 1-3","name":"Lăng La đến từ Vân Đoan","attrs":{"gorgeous":1.87,"elegant":2.73,"mature":0.93,"pure":1.87,"cool":0.93},"tags":["Cổ điển Trung Hoa"]},
@@ -29,6 +32,7 @@
     {"group":"quyen2","id":"v2-1-7","label":"Quyển 2 • 1-7","name":"Buổi sáng sau cơn mưa","attrs":{"simple":1,"elegant":1,"mature":1,"sexy":1,"cool":1},"tags":["Y tế"]},
     {"group":"quyen2","id":"v2-1-sp1","label":"Quyển 2 • 1-SP1","name":"Xạ thủ Calfa","attrs":{"gorgeous":1,"lively":1,"cute":1,"sexy":1,"cool":1},"tags":["Ngầu"]},
     {"group":"quyen2","id":"v2-1-sp2","label":"Quyển 2 • 1-SP2","name":"Đại lộ hoa","attrs":{"gorgeous":1,"lively":1,"cute":1,"sexy":1,"cool":1}},
-    {"group":"quyen2","id":"v2-1-sp3","label":"Quyển 2 • 1-SP3","name":"Tái ngộ","attrs":{"gorgeous":1,"lively":1,"cute":1,"pure":1,"cool":1},"tags":["Trung Hoa hiện đại"]}
+    {"group":"quyen2","id":"v2-1-sp3","label":"Quyển 2 • 1-SP3","name":"Tái ngộ","attrs":{"gorgeous":1,"lively":1,"cute":1,"pure":1,"cool":1},"tags":["Trung Hoa hiện đại"]},
+    {"group":"thidau","id":"arena-spring-picnic","label":"Khu thi đấu • Xuân dã ngoại","name":"Xuân dã ngoại","attrs":{"simple":1.33,"lively":1.33,"cute":1.33,"pure":1,"cool":0.67}}
   ]
 }
