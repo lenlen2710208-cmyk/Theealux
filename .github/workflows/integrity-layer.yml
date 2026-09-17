@@ -1,0 +1,49 @@
+name: Aetheria integrity layer
+
+on:
+  push:
+    paths:
+      - 'rank-guard.js'
+      - 'index.html'
+      - 'app.js'
+      - 'data/stages.json'
+      - 'data/stages-extra.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inject-integrity-layer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Ensure ranking integrity script is loaded
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          text=p.read_text(encoding='utf-8')
+          tag='<script src="rank-guard.js"></script>'
+          if tag not in text:
+              marker='<script src="app.js"></script>'
+              if marker not in text:
+                  raise SystemExit('app.js script tag not found')
+              text=text.replace(marker, marker+tag, 1)
+              p.write_text(text, encoding='utf-8')
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed."
+          else
+            git commit -m "Load Aetheria ranking integrity layer"
+            git push
+          fi
