@@ -1,21 +1,40 @@
-const TARGET_COUNT=32561;const FALLBACK_IMG='https://annie-nikki.homes/favicon.ico';
-const demoItems=Array.from({length:40},(_,i)=>{const cats=['Tóc','Đầm','Áo','Quần','Khoác','Giày','Vớ','Trang sức','Mặt'];const styles=['Thanh lịch','Dễ thương','Quyến rũ','Năng động','Ấm áp'];return{id:i+1,name:['Tâm Nguyện Nikki','Hồ Ly Ánh Trăng','Hương Trắng','Kỵ Sĩ-Áo','Diễm Lệ','Hẹn Ước Hồ Ly','Liliana','Vững Vàng'][i%8]+(i>7?' #'+(i+1):''),category:cats[i%cats.length],style:styles[i%styles.length],score:990-i*7,image:FALLBACK_IMG}});
-let items=demoItems;let currentRank='aihoi';let wardrobe=JSON.parse(localStorage.getItem('thealux_wardrobe')||'[]');
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const DATA_URL = './data/items.json';
+const TARGET_COUNT = 32561;
+const FALLBACK_IMG = 'https://annie-nikki.homes/favicon.ico';
+let items = [];
+let currentRank = 'aihoi';
+let wardrobe = JSON.parse(localStorage.getItem('theealux_wardrobe') || '[]');
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 function toast(t){const x=$('#toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1800)}
-function img(url){return `<img loading="lazy" src="${url||FALLBACK_IMG}" onerror="this.src='${FALLBACK_IMG}'">`}
-function card(item,i){const on=wardrobe.includes(item.id);return `<article class="rank-card"><div class="item-img">${img(item.image)}</div><div class="rank-body"><div class="rank-no">#${i+1}</div><div class="rank-name">${item.name}</div><div class="meta">${item.category} • ${item.style}</div><div class="rank-foot"><span class="score">${item.score} điểm</span><button class="heart ${on?'on':''}" data-heart="${item.id}">${on?'♥':'♡'}</button></div></div></article>`}
-function renderRank(){let base=[...items].sort((a,b)=>b.score-a.score);if(currentRank==='quyen1')base=base.slice(7).concat(base.slice(0,7));if(currentRank==='quyen2')base=base.slice(14).concat(base.slice(0,14));if(currentRank==='thidau')base=base.reverse();$('#rankingGrid').innerHTML=base.slice(0,20).map(card).join('')}
-function renderWardrobe(){const q=$('#wardrobeSearch').value.toLowerCase();const cat=$('#categoryFilter').value;const owned=items.filter(x=>wardrobe.includes(x.id)&&(!q||x.name.toLowerCase().includes(q))&&(cat==='all'||x.category===cat));$('#wardrobeGrid').innerHTML=owned.length?owned.map((x,i)=>card(x,i)).join(''):`<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted)">Tủ đồ đang trống. Hãy bấm ♡ ở bảng xếp hạng để thêm món.</div>`}
-function toggleHeart(id){if(wardrobe.includes(id))wardrobe=wardrobe.filter(x=>x!==id);else wardrobe.push(id);localStorage.setItem('thealux_wardrobe',JSON.stringify(wardrobe));renderRank();renderWardrobe();toast(wardrobe.includes(id)?'Đã thêm vào tủ đồ':'Đã bỏ khỏi tủ đồ')}
-document.addEventListener('click',e=>{const h=e.target.closest('[data-heart]');if(h)toggleHeart(Number(h.dataset.heart));const sc=e.target.closest('[data-scroll]');if(sc)document.getElementById(sc.dataset.scroll)?.scrollIntoView();});
+function esc(v=''){return String(v).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]))}
+function img(url){return `<img loading="lazy" alt="" src="${esc(url||FALLBACK_IMG)}" onerror="this.src='${FALLBACK_IMG}'">`}
+function card(item,i){const on=wardrobe.includes(item.id);return `<article class="rank-card"><div class="item-img">${img(item.image)}</div><div class="rank-body"><div class="rank-no">#${i+1}</div><div class="rank-name">${esc(item.name)}</div><div class="meta">${esc(item.category||'Chưa phân loại')} • ${esc(item.suit||item.style||'')}</div><div class="rank-foot"><span class="score">${item.score==null?'—':esc(item.score)+' điểm'}</span><button class="heart ${on?'on':''}" data-heart="${esc(item.id)}">${on?'♥':'♡'}</button></div></div></article>`}
+function renderRank(){
+  const grid=$('#rankingGrid');
+  if(!items.length){grid.innerHTML='<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--muted)"><b>Dữ liệu thật đang chờ nạp.</b><br>Theealux không hiển thị item giả. Khi dataset VNG đã được kiểm chứng, Top 20 sẽ tự xuất hiện tại đây.</div>';return}
+  let base=[...items].filter(x=>Number.isFinite(Number(x.score))).sort((a,b)=>Number(b.score)-Number(a.score));
+  grid.innerHTML=base.slice(0,20).map(card).join('')||'<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted)">Chưa có điểm xếp hạng được kiểm chứng.</div>';
+}
+function renderWardrobe(){const q=$('#wardrobeSearch').value.toLowerCase();const cat=$('#categoryFilter').value;const owned=items.filter(x=>wardrobe.includes(x.id)&&(!q||String(x.name).toLowerCase().includes(q))&&(cat==='all'||x.category===cat));$('#wardrobeGrid').innerHTML=owned.length?owned.map(card).join(''):`<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted)">Tủ đồ đang trống.</div>`}
+function toggleHeart(id){if(wardrobe.includes(id))wardrobe=wardrobe.filter(x=>x!==id);else wardrobe.push(id);localStorage.setItem('theealux_wardrobe',JSON.stringify(wardrobe));renderRank();renderWardrobe();toast(wardrobe.includes(id)?'Đã thêm vào tủ đồ':'Đã bỏ khỏi tủ đồ')}
+document.addEventListener('click',e=>{const h=e.target.closest('[data-heart]');if(h)toggleHeart(h.dataset.heart);const sc=e.target.closest('[data-scroll]');if(sc)document.getElementById(sc.dataset.scroll)?.scrollIntoView({behavior:'smooth'});});
 $$('#rankTabs button').forEach(b=>b.onclick=()=>{$$('#rankTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentRank=b.dataset.rank;renderRank()});
 $('#wardrobeSearch').oninput=renderWardrobe;$('#categoryFilter').onchange=renderWardrobe;
-$('#clearWardrobe').onclick=()=>{wardrobe=[];localStorage.removeItem('thealux_wardrobe');renderRank();renderWardrobe();toast('Đã xóa tủ đồ trên thiết bị')};
-function search(){const q=$('#globalSearch').value.trim().toLowerCase();if(!q){$('#ranking').scrollIntoView();return}const found=items.filter(x=>(x.name+' '+x.category+' '+x.style).toLowerCase().includes(q));$('#rankingGrid').innerHTML=found.slice(0,20).map(card).join('')||'<div style="grid-column:1/-1;padding:30px;color:var(--muted)">Chưa tìm thấy item trong dữ liệu hiện có.</div>';$('#ranking').scrollIntoView()}
+$('#clearWardrobe').onclick=()=>{wardrobe=[];localStorage.removeItem('theealux_wardrobe');renderRank();renderWardrobe();toast('Đã xóa tủ đồ trên thiết bị')};
+function search(){const q=$('#globalSearch').value.trim().toLowerCase();if(!q){$('#ranking').scrollIntoView({behavior:'smooth'});return}const found=items.filter(x=>(String(x.name)+' '+String(x.category)+' '+String(x.suit||'')+' '+(x.tags||[]).join(' ')).toLowerCase().includes(q));$('#rankingGrid').innerHTML=found.slice(0,20).map(card).join('')||'<div style="grid-column:1/-1;padding:30px;color:var(--muted)">Không tìm thấy trong dataset đã kiểm chứng.</div>';$('#ranking').scrollIntoView({behavior:'smooth'})}
 $('#globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('#searchBtn').onclick=search;
-$('#themeBtn').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('thealux_dark',document.body.classList.contains('dark'));};if(localStorage.getItem('thealux_dark')==='true')document.body.classList.add('dark');
-$('#loginBtn').onclick=()=>$('#loginDialog').showModal();$('#loginSubmit').onclick=()=>{localStorage.setItem('thealux_demo_user',$('#email').value);setTimeout(()=>toast('Đã đăng nhập phiên demo trên thiết bị'),50)};
-$('#optimizeBtn').onclick=()=>{const best=[...items].sort((a,b)=>b.score-a.score).slice(0,5);$('#optimizerResult').innerHTML='<b>Gợi ý nhanh</b><br>'+best.map((x,i)=>`${i+1}. ${x.name} — ${x.score} điểm`).join('<br>')};
+$('#themeBtn').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('theealux_dark',document.body.classList.contains('dark'));};if(localStorage.getItem('theealux_dark')==='true')document.body.classList.add('dark');
+$('#loginBtn').onclick=()=>$('#loginDialog').showModal();$('#loginSubmit').onclick=()=>{localStorage.setItem('theealux_demo_user',$('#email').value);setTimeout(()=>toast('Đã lưu phiên demo trên thiết bị'),50)};
+$('#optimizeBtn').onclick=()=>{const best=[...items].filter(x=>Number.isFinite(Number(x.score))).sort((a,b)=>Number(b.score)-Number(a.score)).slice(0,5);$('#optimizerResult').innerHTML=best.length?'<b>Gợi ý từ dữ liệu đã kiểm chứng</b><br>'+best.map((x,i)=>`${i+1}. ${esc(x.name)} — ${x.score} điểm`).join('<br>'):'Chưa có dataset/điểm chặng đã kiểm chứng.'};
 $('#menuBtn').onclick=()=>{$('.nav').style.display=$('.nav').style.display==='flex'?'none':'flex';$('.nav').style.position='absolute';$('.nav').style.top='60px';$('.nav').style.left='0';$('.nav').style.right='0';$('.nav').style.padding='16px';$('.nav').style.background='var(--card)';$('.nav').style.flexDirection='column'};
-$('#itemCount').textContent=TARGET_COUNT.toLocaleString('vi-VN');renderRank();renderWardrobe();
+async function boot(){
+  try{
+    const r=await fetch(DATA_URL,{cache:'no-store'});if(!r.ok)throw new Error('dataset '+r.status);
+    const payload=await r.json();items=Array.isArray(payload.items)?payload.items:[];
+    const verified=Number(payload.meta?.verifiedCount ?? items.length);$('#itemCount').textContent=verified.toLocaleString('vi-VN');
+    const status=$('.hero-mini'); if(status && !items.length) status.insertAdjacentHTML('afterbegin','<div>🧾 Chưa có item giả — chờ dữ liệu kiểm chứng</div>');
+  }catch(e){items=[];$('#itemCount').textContent='0';toast('Không tải được dataset');}
+  renderRank();renderWardrobe();
+}
+boot();
