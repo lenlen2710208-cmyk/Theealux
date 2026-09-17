@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "locale": "vi-VN",
+  "hierarchy": [
+    {"id":"quyen1","label":"Quyển 1","children":"chapter > stage"},
+    {"id":"quyen2","label":"Quyển 2","children":"chapter > stage"},
+    {"id":"aihoi","label":"Đấu hội / Ải hội","children":"chapter > stage"},
+    {"id":"thidau","label":"Khu thi đấu","children":"theme"},
+    {"id":"quyen3","label":"Quyển 3","enabled":false,"reason":"Chưa đưa vào dữ liệu Việt khi chưa xác minh bản VNG đã phát hành."}
+  ],
+  "rankingRule": "Top 20 phải gắn với đúng một stage hoặc theme cụ thể; không dùng một điểm chung cho toàn bộ Quyển/nhóm.",
+  "dataRule": "Chỉ hiển thị stage/theme khi có nguồn kiểm chứng. Thiếu dữ liệu thì hiển thị trạng thái chưa xác minh thay vì tự điền.",
+  "sources": [
+    "https://gamerch.com/miracle-nikki/592920",
+    "https://gamerch.com/miracle-nikki/589549",
+    "https://wiki.biligame.com/qjnn/衣服图鉴",
+    "https://ngoisao.vnggames.com/"
+  ]
+}
