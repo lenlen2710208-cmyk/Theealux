@@ -103,9 +103,10 @@ for (const item of normalized) {
 }
 const rows = [...unique.values()];
 if (!rows.length) { await browser.close(); throw new Error('Không lấy được item hợp lệ từ Annie.'); }
-const payload = { version: 6, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
+const payload = { version: 7, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
 await fs.mkdir(path.dirname(out), { recursive: true });
-await fs.writeFile(out, JSON.stringify(payload, null, 2));
+// Compact JSON keeps GitHub Pages download much smaller and makes the mobile site load faster.
+await fs.writeFile(out, JSON.stringify(payload));
 await browser.close();
 console.log(`Imported ${rows.length} valid unique items from Annie API.`);
 if (rows.length < 30000) console.warn(`Nguồn hiện thu được ${rows.length} item; không bơm item giả.`);
