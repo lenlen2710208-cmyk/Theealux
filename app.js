@@ -3,7 +3,7 @@ const STAGES_URL='./data/stages.json';
 const STAGE_EXTRAS_URL='./data/stages-extra.json';
 const PAGE_SIZE=40;
 const ATTRS=['gorgeous','simple','elegant','lively','mature','cute','sexy','pure','warm','cool'];
-const ATTR_LABELS={gorgeous:'Hoa lệ',simple:'Giản dị',elegant:'Thanh lịch',lively:'Năng động',mature:'Trưởng thành',cute:'Dễ thương',sexy:'Quyến rũ',pure:'Thuần khiết',warm:'Ấm áp',cool:'Mát mẻ'};
+const ATTR_LABELS={gorgeous:'Quý phái',simple:'Đơn giản',elegant:'Thanh lịch',lively:'Năng động',mature:'Trưởng thành',cute:'Dễ thương',sexy:'Gợi cảm',pure:'Trong sáng',warm:'Giữ ấm',cool:'Mát mẻ'};
 const FALLBACK_IMG='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22760%22%3E%3Crect width=%22600%22 height=%22760%22 fill=%22%23f0e1db%22/%3E%3Cpath d=%22M300 175c55 0 100 45 100 100s-45 100-100 100-100-45-100-100 45-100 100-100Zm-150 430c20-115 75-175 150-175s130 60 150 175Z%22 fill=%22%23c89aa3%22/%3E%3C/svg%3E';
 let items=[],stageData={stages:[]},currentRank='aihoi',currentPage=1,libraryFiltered=[],rankStageMemory={};
 let wardrobe=JSON.parse(localStorage.getItem('aetheria_wardrobe')||localStorage.getItem('theealux_wardrobe')||'[]');
