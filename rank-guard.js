@@ -1,6 +1,6 @@
 /* Aetheria ranking integrity layer: never present a proxy attribute sum as real battle score. */
 (function(){
-  const BUILD='2026.09.17-r77';
+  const BUILD='2026.09.17-r78';
   const esc2=v=>String(v??'').replace(/[&<>\\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]||c));
   function chapterOf(s){
     const text=String(s?.label||s?.name||'');
@@ -14,14 +14,23 @@
   function exactReady(stage){return !!stage && exactStageData(stage) && Array.isArray(items) && items.length>0 && items.some(exactItemData)}
   function removeLegacySelector(){document.querySelector('#rankStageSelect')?.remove()}
   function setBuildStatus(){
-    const host=document.querySelector('#heroStatus');
-    if(!host)return;
-    if(!host.querySelector('.build-status')){
-      const el=document.createElement('div');el.className='build-status';el.textContent=`✓ Bản triển khai ${BUILD}`;host.appendChild(el)
+    const host=document.querySelector('#heroStatus'); if(!host)return;
+    let el=host.querySelector('.build-status');
+    if(!el){el=document.createElement('div');el.className='build-status';host.appendChild(el)}
+    el.textContent=`✓ Aetheria ${BUILD} • dữ liệu không giả lập`;
+  }
+  function ensureLimitSelector(){
+    const bar=document.querySelector('.rank-toolbar'); if(!bar)return;
+    let sel=document.querySelector('#rankLimit');
+    if(!sel){
+      const label=document.createElement('label');label.className='rank-limit-wrap';label.innerHTML='<span>Hiển thị</span><select id="rankLimit" aria-label="Số lượng item xếp hạng"><option value="20">Top 20</option><option value="50">Top 50</option><option value="100">Top 100</option></select>';
+      bar.appendChild(label);sel=label.querySelector('select');
+      sel.value=localStorage.getItem('aetheria_rank_limit')||'20';
+      sel.onchange=()=>{localStorage.setItem('aetheria_rank_limit',sel.value);window.renderRank()};
     }
   }
   function ensureHierarchy(){
-    removeLegacySelector();
+    removeLegacySelector(); ensureLimitSelector();
     const cat=document.querySelector('#rankCategory'); if(!cat)return;
     let wrap=document.querySelector('#rankStageHierarchy');
     if(!wrap){wrap=document.createElement('div');wrap.id='rankStageHierarchy';wrap.className='rank-stage-hierarchy';cat.insertAdjacentElement('afterend',wrap)}
@@ -54,15 +63,16 @@
     if(!grid)return;
     const id=window.__aetheriaSelectedStage||document.querySelector('#rankExactStageSelect')?.value;
     const stage=(stageData?.stages||[]).find(s=>s.id===id);
+    const limit=Number(document.querySelector('#rankLimit')?.value||20);
     if(!stage){grid.innerHTML='<div class="empty"><b>Chưa có chặng đã xác minh.</b><br>Aetheria không tự tạo Top khi thiếu dữ liệu chặng.</div>';if(info)info.textContent='Chưa có dữ liệu chặng';return}
     if(!exactReady(stage)){
-      grid.innerHTML=`<div class="empty"><b>Chưa mở bảng xếp hạng thật cho ${esc2(stage.label||stage.name||stage.id)}.</b><br>Thiếu dữ liệu điểm nội bộ của item và/hoặc hệ số phán định, điểm đối thủ, kỹ năng và hệ số tag cần để tái hiện cơ chế tính điểm game.<br><strong>Aetheria không dùng phép cộng 10 thuộc tính để giả làm điểm trận đấu.</strong></div>`;
-      if(info)info.textContent='Chưa đủ dữ liệu tính điểm thật';
-      if(desc)desc.textContent='Khi dữ liệu hoàn chỉnh, người dùng có thể chọn Top 20 / 50 / 100 cho đúng từng ải hoặc chủ đề.';
+      grid.innerHTML=`<div class="empty"><b>Chưa mở Top ${limit} thật cho ${esc2(stage.label||stage.name||stage.id)}.</b><br>Thiếu dữ liệu điểm nội bộ của item và/hoặc hệ số phán định, điểm đối thủ, kỹ năng và hệ số tag cần để tái hiện cơ chế tính điểm game.<br><strong>Aetheria không dùng phép cộng 10 thuộc tính để giả làm điểm trận đấu.</strong><br><br><span>Top 20 / 50 / 100 đã sẵn sàng ở giao diện; bảng chỉ mở khi dữ liệu tính điểm được xác minh.</span></div>`;
+      if(info)info.textContent=`Top ${limit} • Chưa đủ dữ liệu tính điểm thật`;
+      if(desc)desc.textContent=`${stage.label} — ${stage.name}. Chọn Top 20 / 50 / 100; Aetheria chỉ công bố thứ hạng khi đủ dữ liệu game.`;
       return;
     }
-    grid.innerHTML='<div class="empty"><b>Đã đủ đầu vào tính điểm thật.</b><br>Bộ máy đang chờ dữ liệu bài toán hoàn chỉnh cho từng vị trí trang phục.</div>';
-    if(info)info.textContent='Đã đủ đầu vào — chưa phát hành điểm giả lập';
+    grid.innerHTML='<div class="empty"><b>Đã đủ đầu vào tính điểm thật.</b><br>Bộ máy đang hoàn thiện phép tính theo từng vị trí trang phục; chưa phát hành điểm giả lập.</div>';
+    if(info)info.textContent=`Top ${limit} • Đã đủ đầu vào — chưa phát hành điểm giả lập`;
   };
   window.optimize=function(){
     const out=document.querySelector('#optimizerResult');if(!out)return;
