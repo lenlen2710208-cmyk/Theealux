@@ -13,20 +13,30 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: npm init -y
       - run: npm install --no-save playwright
       - run: npx playwright install --with-deps chromium
-      - run: node scripts/sync-annie.mjs
+      - name: Sync real item data
+        env:
+          SOURCE_URL: https://annie-nikki.homes/items
+        run: node scripts/sync-annie.mjs
+      - name: Validate dataset
+        run: node scripts/validate-dataset.mjs
       - name: Save dataset
         run: |
           git config user.name 'Theealux Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add data/items.json
-          git diff --cached --quiet && exit 0
-          git commit -m 'data: initial real item load'
+          if git diff --cached --quiet; then
+            echo 'No dataset changes.'
+            exit 0
+          fi
+          git commit -m 'data: sync real item data'
           git push
