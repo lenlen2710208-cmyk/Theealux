@@ -42,3 +42,4 @@ jobs:
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
+          # Dataset sync is intentionally source-only; no generated rankings are invented here.
