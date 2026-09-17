@@ -82,7 +82,7 @@ const normalize = (x) => ({
   rarity: Number(x.rarity ?? x.star ?? x.stars ?? x.Rarity ?? 0) || null,
   gorgeous: Number(x.gorgeous ?? x.Gorgeous ?? 0) || 0,
   simple: Number(x.simple ?? x.Simple ?? 0) || 0,
-  elegant: Number(x.elegance ?? x.Elegance ?? x.elegant ?? 0) || 0,
+  elegant: Number(x.elegance ?? x.Elegance ?? x.elegant ?? x.Elegant ?? 0) || 0,
   lively: Number(x.lively ?? x.Lively ?? 0) || 0,
   mature: Number(x.mature ?? x.Mature ?? 0) || 0,
   cute: Number(x.cute ?? x.Cute ?? 0) || 0,
@@ -103,9 +103,17 @@ for (const item of normalized) {
 }
 const rows = [...unique.values()];
 if (!rows.length) { await browser.close(); throw new Error('Không lấy được item hợp lệ từ Annie.'); }
-const payload = { version: 7, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
+const attrs = ['gorgeous','simple','elegant','lively','mature','cute','sexy','pure','warm','cool'];
+const withAnyAttributes = rows.filter(x => attrs.some(k => Number(x[k]) > 0)).length;
+const withAllAttributes = rows.filter(x => attrs.every(k => Number(x[k]) > 0)).length;
+const withFiveOrMoreAttributes = rows.filter(x => attrs.filter(k => Number(x[k]) > 0).length >= 5).length;
+console.log(`Unique valid: ${rows.length}`);
+console.log(`With any real attribute: ${withAnyAttributes}`);
+console.log(`With all 10 attributes: ${withAllAttributes}`);
+console.log(`With 5+ non-zero attributes: ${withFiveOrMoreAttributes}`);
+console.log(`Annie displayed target reference: 32561`);
+const payload = { version: 8, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, attributeCoverage: { withAnyAttributes, withAllAttributes, withFiveOrMoreAttributes }, items: rows };
 await fs.mkdir(path.dirname(out), { recursive: true });
-// Compact JSON keeps GitHub Pages download much smaller and makes the mobile site load faster.
 await fs.writeFile(out, JSON.stringify(payload));
 await browser.close();
 console.log(`Imported ${rows.length} valid unique items from Annie API.`);
