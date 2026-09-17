@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Aetheria verified internal parameter record",
+  "type":"object",
+  "required":["itemId","part","source","verificationStatus","parameters"],
+  "properties":{
+    "itemId":{"type":"string"},
+    "name":{"type":"string"},
+    "part":{"type":"string"},
+    "source":{"type":"string","format":"uri"},
+    "verificationStatus":{"enum":["source-verified","vn-verified","unverified"]},
+    "parameters":{"type":"object","additionalProperties":{"type":"number"}},
+    "notes":{"type":"string"}
+  },
+  "additionalProperties":false
+}
