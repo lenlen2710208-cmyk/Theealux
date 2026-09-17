@@ -1,0 +1,37 @@
+name: Sync Vietnamese item names
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 3 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Vietnamese names from public VN item pages
+        run: node scripts/sync-vietnamese-names.mjs
+
+      - name: Commit updated names
+        run: |
+          git config user.name "Aetheria Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/vietnamese-names.json
+          if git diff --cached --quiet; then
+            echo "No Vietnamese-name changes."
+          else
+            git commit -m "Sync Vietnamese item names"
+            git push
+          fi
