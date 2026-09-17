@@ -1,46 +1,23 @@
-name: Sync real Ngôi Sao Thời Trang data
+name: Validate Aetheria dataset
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'scripts/sync-annie.mjs'
+      - 'data/items.json'
       - 'scripts/validate-dataset.mjs'
       - '.github/workflows/sync-data.yml'
-  schedule:
-    - cron: '17 3 * * *'
 
 permissions:
-  contents: write
-
-concurrency:
-  group: aetheria-data-sync
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  sync:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm init -y
-      - run: npm install --no-save playwright
-      - run: npx playwright install --with-deps chromium
-      - run: node scripts/sync-annie.mjs
-      - name: Validate verified source data
+      - name: Validate dataset
         run: node scripts/validate-dataset.mjs
-      - name: Commit verified source data
-        run: |
-          git config user.name 'Aetheria Bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git fetch origin main
-          git reset --hard origin/main
-          git add data/items.json
-          git diff --cached --quiet && echo 'No dataset changes' && exit 0
-          git commit -m 'data: sync real item data from Annie'
-          git push origin HEAD:main
-          # Dataset sync is source-only; no generated rankings are invented here.
