@@ -1,10 +1,10 @@
 {
-  "version": 5,
+  "version": 6,
   "game": "Ngôi Sao Thời Trang VNG",
   "locale": "vi-VN",
   "source": "Annie Nikki Homes",
   "sourceUrl": "https://annie-nikki.homes/items",
-  "fetchedAt": "2026-09-17T05:25:18.963Z",
+  "fetchedAt": "2026-09-17T05:28:04.682Z",
   "targetCount": 32561,
   "count": 37589,
   "items": [
