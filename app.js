@@ -1,46 +1,36 @@
-const DATA_URL = './data/items.json';
-const TARGET_COUNT = 32561;
-const FALLBACK_IMG = 'https://annie-nikki.homes/favicon.ico';
-let items = [];
-let currentRank = 'aihoi';
-let wardrobe = JSON.parse(localStorage.getItem('theealux_wardrobe') || '[]');
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
-function toast(t){const x=$('#toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1800)}
-function esc(v=''){return String(v).replace(/[&<>\\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]))}
-function img(url){return `<img loading="lazy" alt="" src="${esc(url||FALLBACK_IMG)}" onerror="this.src='${FALLBACK_IMG}'">`}
-function itemScore(x){
-  if(Number.isFinite(Number(x.score))) return Number(x.score);
-  const attrs=['gorgeous','simple','elegant','lively','mature','cute','sexy','pure','warm','cool'];
-  const sum=attrs.reduce((n,k)=>n+(Number(x[k])||0),0);
-  return sum>0 ? sum : (Number(x.rarity)||0)*10;
-}
-function card(item,i){const on=wardrobe.includes(item.id);return `<article class="rank-card"><div class="item-img">${img(item.image)}</div><div class="rank-body"><div class="rank-no">#${i+1}</div><div class="rank-name">${esc(item.name)}</div><div class="meta">${esc(item.category||'Chưa phân loại')} • ${esc(item.suit||item.style||'')}</div><div class="rank-foot"><span class="score">${itemScore(item).toLocaleString('vi-VN')} điểm</span><button class="heart ${on?'on':''}" data-heart="${esc(item.id)}">${on?'♥':'♡'}</button></div></div></article>`}
-function renderRank(){
-  const grid=$('#rankingGrid');
-  if(!items.length){grid.innerHTML='<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--muted)"><b>Đang chờ dữ liệu item.</b><br>Theealux sẽ hiển thị dữ liệu ngay khi đồng bộ hoàn tất.</div>';return}
-  const base=[...items].filter(x=>itemScore(x)>0).sort((a,b)=>itemScore(b)-itemScore(a));
-  grid.innerHTML=base.slice(0,20).map(card).join('')||'<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted)">Chưa có item phù hợp.</div>';
-}
-function renderWardrobe(){const q=$('#wardrobeSearch').value.toLowerCase();const cat=$('#categoryFilter').value;const owned=items.filter(x=>wardrobe.includes(x.id)&&(!q||String(x.name).toLowerCase().includes(q))&&(cat==='all'||x.category===cat));$('#wardrobeGrid').innerHTML=owned.length?owned.map(card).join(''):`<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--muted)">Tủ đồ đang trống.</div>`}
-function toggleHeart(id){if(wardrobe.includes(id))wardrobe=wardrobe.filter(x=>x!==id);else wardrobe.push(id);localStorage.setItem('theealux_wardrobe',JSON.stringify(wardrobe));renderRank();renderWardrobe();toast(wardrobe.includes(id)?'Đã thêm vào tủ đồ':'Đã bỏ khỏi tủ đồ')}
-document.addEventListener('click',e=>{const h=e.target.closest('[data-heart]');if(h)toggleHeart(h.dataset.heart);const sc=e.target.closest('[data-scroll]');if(sc)document.getElementById(sc.dataset.scroll)?.scrollIntoView({behavior:'smooth'});});
+const DATA_URL='./data/items.json';
+const PAGE_SIZE=40;
+const ATTRS=['gorgeous','simple','elegant','lively','mature','cute','sexy','pure','warm','cool'];
+const ATTR_LABELS={gorgeous:'Hoa lệ',simple:'Giản dị',elegant:'Thanh lịch',lively:'Năng động',mature:'Trưởng thành',cute:'Dễ thương',sexy:'Quyến rũ',pure:'Thuần khiết',warm:'Ấm áp',cool:'Mát mẻ'};
+const FALLBACK_IMG='https://annie-nikki.homes/favicon.ico';
+let items=[];let currentRank='aihoi';let currentPage=1;let libraryFiltered=[];
+let wardrobe=JSON.parse(localStorage.getItem('theealux_wardrobe')||'[]');
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(t){const x=$('#toast');x.textContent=t;x.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>x.classList.remove('show'),1800)}
+function esc(v=''){return String(v).replace(/[&<>\\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]));}
+function img(url,name=''){return `<img loading="lazy" alt="${esc(name)}" src="${esc(url||FALLBACK_IMG)}" onerror="this.onerror=null;this.src='${FALLBACK_IMG}'">`}
+function itemScore(x){if(Number.isFinite(Number(x.score)))return Number(x.score);const sum=ATTRS.reduce((n,k)=>n+(Number(x[k])||0),0);return sum>0?sum:(Number(x.rarity)||0)*10}
+function categoryOf(x){return String(x.category||'Chưa phân loại').trim()}
+function searchable(x){return [x.name,x.category,x.suit,x.style,Array.isArray(x.tags)?x.tags.join(' '):x.tags,...ATTRS.map(k=>ATTR_LABELS[k])].join(' ').toLowerCase()}
+function stars(r){const n=Math.max(0,Math.min(5,Number(r)||0));return n?'★'.repeat(n)+'☆'.repeat(5-n):'—'}
+function card(item,i,rank=false){const on=wardrobe.includes(String(item.id))||wardrobe.includes(item.id);const top=rank?`<div class="rank-no">#${i+1}</div>`:'';const attrs=ATTRS.map(k=>Number(item[k])||0).filter(Boolean).sort((a,b)=>b-a).slice(0,2).join(' • ');return `<article class="item-card ${rank?'rank-card':''}"><div class="item-img">${img(item.image,item.name)}<button class="heart ${on?'on':''}" data-heart="${esc(item.id)}" aria-label="${on?'Bỏ khỏi tủ đồ':'Lưu vào tủ đồ'}">${on?'♥':'♡'}</button></div><div class="item-body">${top}<div class="rank-name">${esc(item.name||'Chưa đặt tên')}</div><div class="meta">${esc(categoryOf(item))}${item.suit?` • ${esc(item.suit)}`:''}</div><div class="item-meta"><span class="rarity">${stars(item.rarity)}</span><span class="score">${itemScore(item).toLocaleString('vi-VN')}</span></div>${attrs?`<div class="attr-line">${esc(attrs)} điểm thuộc tính cao</div>`:''}</div></article>`}
+function rankPool(){let pool=items.filter(x=>itemScore(x)>0);const cat=$('#rankCategory')?.value||'all';if(cat!=='all')pool=pool.filter(x=>categoryOf(x)===cat);return pool.sort((a,b)=>itemScore(b)-itemScore(a))}
+function renderRank(){const grid=$('#rankingGrid');if(!items.length){grid.innerHTML='<div class="empty">Chưa có dữ liệu item.</div>';return}const pool=rankPool();grid.innerHTML=pool.slice(0,20).map((x,i)=>card(x,i,true)).join('')||'<div class="empty">Không có item phù hợp.</div>';$('#rankInfo').textContent=`Top ${Math.min(20,pool.length)} • ${pool.length.toLocaleString('vi-VN')} item phù hợp`;const descriptions={aihoi:'Bảng tham khảo tổng điểm thuộc tính cho nhóm Ải hội.',quyen1:'Bảng tham khảo tổng điểm thuộc tính cho Quyển 1.',quyen2:'Bảng tham khảo tổng điểm thuộc tính cho Quyển 2.',thidau:'Bảng tham khảo tổng điểm thuộc tính cho Khu thi đấu.'};$('#rankDescription').textContent=descriptions[currentRank]||descriptions.aihoi}
+function libraryFilter(){const q=($('#wardrobeSearch')?.value||'').trim().toLowerCase();const cat=$('#categoryFilter')?.value||'all';const rarity=$('#rarityFilter')?.value||'all';const own=$('#ownershipFilter')?.value||'all';libraryFiltered=items.filter(x=>{const owned=wardrobe.includes(String(x.id))||wardrobe.includes(x.id);return(!q||searchable(x).includes(q))&&(cat==='all'||categoryOf(x)===cat)&&(rarity==='all'||String(x.rarity||'')===rarity)&&(own==='all'||(own==='owned'&&owned)||(own==='unowned'&&!owned))});currentPage=Math.min(currentPage,Math.max(1,Math.ceil(libraryFiltered.length/PAGE_SIZE)));renderLibrary()}
+function renderLibrary(){const start=(currentPage-1)*PAGE_SIZE;const page=libraryFiltered.slice(start,start+PAGE_SIZE);$('#wardrobeGrid').innerHTML=page.length?page.map((x,i)=>card(x,start+i,false)).join(''):'<div class="empty">Không tìm thấy item. Hãy thử từ khóa hoặc bộ lọc khác.</div>';const pages=Math.max(1,Math.ceil(libraryFiltered.length/PAGE_SIZE));$('#pageInfo').textContent=`Trang ${currentPage} / ${pages}`;$('#prevPage').disabled=currentPage<=1;$('#nextPage').disabled=currentPage>=pages;$('#visibleCount').textContent=libraryFiltered.length.toLocaleString('vi-VN');$('#libraryCount').textContent=items.length.toLocaleString('vi-VN');$('#ownedCount').textContent=wardrobe.length.toLocaleString('vi-VN')}
+function toggleHeart(id){const key=String(id);const pos=wardrobe.findIndex(x=>String(x)===key);if(pos>=0)wardrobe.splice(pos,1);else wardrobe.push(key);localStorage.setItem('theealux_wardrobe',JSON.stringify(wardrobe));renderRank();libraryFilter();toast(pos>=0?'Đã bỏ khỏi tủ đồ':'Đã thêm vào tủ đồ')}
+function search(){const q=$('#globalSearch').value.trim().toLowerCase();if(!q){$('#ranking').scrollIntoView({behavior:'smooth'});return}$('#wardrobeSearch').value=q;$('#ownershipFilter').value='all';$('#categoryFilter').value='all';libraryFilter();$('#wardrobe').scrollIntoView({behavior:'smooth'});toast(`Đã lọc theo “${q}”`)}
+document.addEventListener('click',e=>{const h=e.target.closest('[data-heart]');if(h){e.preventDefault();toggleHeart(h.dataset.heart);return}const sc=e.target.closest('[data-scroll]');if(sc)document.getElementById(sc.dataset.scroll)?.scrollIntoView({behavior:'smooth'})});
 $$('#rankTabs button').forEach(b=>b.onclick=()=>{$$('#rankTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentRank=b.dataset.rank;renderRank()});
-$('#wardrobeSearch').oninput=renderWardrobe;$('#categoryFilter').onchange=renderWardrobe;
-$('#clearWardrobe').onclick=()=>{wardrobe=[];localStorage.removeItem('theealux_wardrobe');renderRank();renderWardrobe();toast('Đã xóa tủ đồ trên thiết bị')};
-function search(){const q=$('#globalSearch').value.trim().toLowerCase();if(!q){$('#ranking').scrollIntoView({behavior:'smooth'});return}const found=items.filter(x=>(String(x.name)+' '+String(x.category)+' '+String(x.suit||'')+' '+(x.tags||[]).join(' ')).toLowerCase().includes(q));$('#rankingGrid').innerHTML=found.slice(0,20).map(card).join('')||'<div style="grid-column:1/-1;padding:30px;color:var(--muted)">Không tìm thấy item.</div>';$('#ranking').scrollIntoView({behavior:'smooth'})}
-$('#globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('#searchBtn').onclick=search;
+$('#rankCategory').onchange=renderRank;['wardrobeSearch','categoryFilter','rarityFilter','ownershipFilter'].forEach(id=>{const el=$('#'+id);el.oninput=el.onchange=()=>{currentPage=1;libraryFilter()}});
+$('#prevPage').onclick=()=>{if(currentPage>1){currentPage--;renderLibrary();window.scrollTo({top:document.getElementById('wardrobe').offsetTop-70,behavior:'smooth'})}};
+$('#nextPage').onclick=()=>{const pages=Math.max(1,Math.ceil(libraryFiltered.length/PAGE_SIZE));if(currentPage<pages){currentPage++;renderLibrary();window.scrollTo({top:document.getElementById('wardrobe').offsetTop-70,behavior:'smooth'})}};
+$('#clearWardrobe').onclick=()=>{wardrobe=[];localStorage.removeItem('theealux_wardrobe');renderRank();libraryFilter();toast('Đã xóa tủ đồ trên thiết bị')};
+$('#globalSearch').onkeydown=e=>{if(e.key==='Enter')search()};$('#searchBtn').onclick=search;
 $('#themeBtn').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('theealux_dark',document.body.classList.contains('dark'));};if(localStorage.getItem('theealux_dark')==='true')document.body.classList.add('dark');
 $('#loginBtn').onclick=()=>$('#loginDialog').showModal();$('#loginSubmit').onclick=()=>{localStorage.setItem('theealux_demo_user',$('#email').value);setTimeout(()=>toast('Đã lưu phiên demo trên thiết bị'),50)};
-$('#optimizeBtn').onclick=()=>{const best=[...items].sort((a,b)=>itemScore(b)-itemScore(a)).slice(0,5);$('#optimizerResult').innerHTML=best.length?'<b>Gợi ý từ dữ liệu item</b><br>'+best.map((x,i)=>`${i+1}. ${esc(x.name)} — ${itemScore(x).toLocaleString('vi-VN')} điểm`).join('<br>'):'Chưa có item.'};
-$('#menuBtn').onclick=()=>{$('.nav').style.display=$('.nav').style.display==='flex'?'none':'flex';$('.nav').style.position='absolute';$('.nav').style.top='60px';$('.nav').style.left='0';$('.nav').style.right='0';$('.nav').style.padding='16px';$('.nav').style.background='var(--card)';$('.nav').style.flexDirection='column'};
-async function boot(){
-  try{
-    const r=await fetch(DATA_URL,{cache:'no-store'});if(!r.ok)throw new Error('dataset '+r.status);
-    const payload=await r.json();items=Array.isArray(payload.items)?payload.items:[];
-    const count=Number(payload.meta?.verifiedCount ?? payload.count ?? items.length);$('#itemCount').textContent=count.toLocaleString('vi-VN');
-    const status=$('.hero-mini');if(status&&items.length)status.textContent=`${count.toLocaleString('vi-VN')} item đã đồng bộ từ Annie Nikki Homes`;
-  }catch(e){items=[];$('#itemCount').textContent='0';toast('Không tải được dataset');}
-  renderRank();renderWardrobe();
-}
+function optimize(){const style=$('#styleFilter').value;const cat=$('#stageCategory').value;let pool=items.filter(x=>(cat==='all'||categoryOf(x)===cat));if(style!=='all')pool.sort((a,b)=>(Number(b[style])||0)-(Number(a[style])||0));else pool.sort((a,b)=>itemScore(b)-itemScore(a));const best=pool.slice(0,5);$('#optimizerResult').innerHTML=best.length?`<b>${style==='all'?'Gợi ý theo tổng điểm':`Gợi ý theo ${ATTR_LABELS[style]}`}</b><div class="opt-list">${best.map((x,i)=>`<div><span>#${i+1} ${esc(x.name)}</span><b>${(Number(x[style])||itemScore(x)).toLocaleString('vi-VN')}</b></div>`).join('')}</div>`:'Chưa có item phù hợp.'}
+$('#optimizeBtn').onclick=optimize;$$('#stageTabs button').forEach(b=>b.onclick=()=>{$$('#stageTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');optimize()});
+$('#menuBtn').onclick=()=>{$('.nav').classList.toggle('open')};
+async function boot(){try{const r=await fetch(DATA_URL,{cache:'no-store'});if(!r.ok)throw new Error(`dataset ${r.status}`);const payload=await r.json();items=Array.isArray(payload.items)?payload.items:[];const count=Number(payload.count||items.length);$('#itemCount').textContent=count.toLocaleString('vi-VN');$('#heroStatus').innerHTML=`<div>✓ ${count.toLocaleString('vi-VN')} item đã đồng bộ</div><div>📦 Nguồn: Annie Nikki Homes</div><div>🔄 Dữ liệu có thể cập nhật tự động</div>`;renderRank();libraryFilter();optimize()}catch(e){console.error(e);items=[];$('#itemCount').textContent='0';$('#heroStatus').innerHTML='<div>⚠ Không tải được dữ liệu</div><div>Hãy tải lại trang sau khi GitHub Pages cập nhật.</div>';toast('Không tải được dataset')}}
 boot();
