@@ -1,15 +1,21 @@
 {
-  "project": "Theealux",
+  "project": "Aetheria",
   "game": "Ngôi Sao Thời Trang VNG",
   "locale": "vi-VN",
   "targetItemCount": 32561,
   "policy": "verified-only",
-  "primaryReference": "https://annie-nikki.homes/",
+  "primaryReferences": [
+    "https://ngoisao.vnggames.com/",
+    "https://vn.nikkis.info/",
+    "https://wiki.biligame.com/qjnn/%E9%A6%96%E9%A1%B5",
+    "https://miracle-nikki.fandom.com/wiki/Miracle_Nikki_Wiki"
+  ],
   "officialGame": "https://ngoisao.vnggames.com/",
   "notes": [
     "Không sinh dữ liệu item giả.",
     "Không coi dữ liệu quốc tế là dữ liệu VNG Việt Nam nếu chưa đối chiếu.",
-    "Mỗi item cần source, sourceId và verificationStatus.",
-    "Ảnh chỉ dùng URL đã xác định từ nguồn công khai; không tự đoán URL ảnh."
+    "Nguồn tham khảo được quản lý tập trung; không hiển thị nguồn trên từng thẻ item.",
+    "Ảnh chỉ dùng URL đã xác định từ nguồn công khai; không tự đoán URL ảnh.",
+    "Xếp hạng theo chặng chỉ được hiển thị khi có dữ liệu yêu cầu chặng đã xác minh."
   ]
 }
