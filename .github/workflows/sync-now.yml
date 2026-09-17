@@ -1,9 +1,15 @@
 name: Theealux initial data load
+
 on:
-  push:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync-annie.mjs'
+      - '.github/workflows/sync-now.yml'
+
 permissions:
   contents: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
