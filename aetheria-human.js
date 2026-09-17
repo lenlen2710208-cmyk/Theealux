@@ -1,0 +1,45 @@
+(()=>{
+'use strict';
+/* Aetheria Human Layer — makes the catalog feel hand-curated while keeping every value data-driven. */
+const A=['gorgeous','simple','elegant','lively','mature','cute','sexy','pure','warm','cool'];
+const L={gorgeous:'Quý phái',simple:'Đơn giản',elegant:'Thanh lịch',lively:'Năng động',mature:'Trưởng thành',cute:'Dễ thương',sexy:'Gợi cảm',pure:'Trong sáng',warm:'Giữ ấm',cool:'Mát mẻ'};
+const C={hair:'Tóc',dress:'Váy liền',top:'Áo',bottom:'Quần',coat:'Áo khoác',socks:'Tất',shoes:'Giày',makeup:'Trang điểm',accessory:'Phụ kiện'};
+let items=[];
+const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+function normalize(p){return Array.isArray(p?.items)?p.items:Array.isArray(p)?p:[]}
+function topAttrs(x){return A.map(k=>[k,+x[k]||0]).filter(v=>v[1]>0).sort((a,b)=>b[1]-a[1])}
+function tags(x){return Array.isArray(x.tags)?x.tags:(x.tags?[String(x.tags)]:[])}
+function verified(x){return /verified|vng|official|đối chiếu|cross/i.test(String(x.verificationStatus||'')+' '+String(x.source||''))}
+function insight(){
+ const box=document.createElement('div');box.className='human-insight';
+ const suitCount=new Set(items.map(x=>x.suit).filter(Boolean)).size;
+ const cat=new Map();items.forEach(x=>cat.set(C[x.category]||x.category||'Chưa phân loại',(cat.get(C[x.category]||x.category||'Chưa phân loại')||0)+1));
+ const top=[...cat.entries()].sort((a,b)=>b[1]-a[1]).slice(0,4);
+ const attr=A.map(k=>[k,items.reduce((n,x)=>n+(+x[k]||0),0)]).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ box.innerHTML=`<div class="human-insight-head"><div><span class="eyebrow">GHI CHÚ CỦA AETHERIA</span><h3>Dữ liệu được đọc như một tủ đồ thật</h3><p>Không chấm điểm bằng cảm tính. Aetheria đọc đủ 10 thuộc tính, loại đồ, độ hiếm, tag, bộ và nguồn của từng item rồi mới đưa ra gợi ý.</p></div><span class="human-seal">✦</span></div><div class="human-insight-grid"><div><small>Kho hiện tại</small><b>${items.length.toLocaleString('vi-VN')}</b><span>item đã nạp</span></div><div><small>Bộ có tên</small><b>${suitCount.toLocaleString('vi-VN')}</b><span>nhóm suit</span></div><div><small>Thuộc tính</small><b>10</b><span>nhãn chuẩn VNG</span></div><div><small>Loại phổ biến</small><b>${esc(top[0]?.[0]||'—')}</b><span>${(top[0]?.[1]||0).toLocaleString('vi-VN')} item</span></div></div><div class="human-insight-foot"><span>✦ Thuộc tính nổi bật trong dữ liệu: ${attr.map(v=>esc(L[v[0]])).join(' · ')}</span><span>↗ Dữ liệu thiếu vẫn được giữ là “chưa xác minh”, không tự bịa.</span></div>`;
+ const tools=$('#tools .feature-grid');if(tools)tools.parentElement.insertBefore(box,tools);else $('#tools')?.appendChild(box);
+}
+function enrichCards(){
+ document.querySelectorAll('[data-item-id]').forEach(card=>{
+  const x=items.find(v=>String(v.id)===String(card.dataset.itemId)); if(!x||card.querySelector('.human-chip-row'))return;
+  const b=card.querySelector('.item-body');if(!b)return;
+  const t=topAttrs(x).slice(0,2).map(v=>L[v[0]]);const ts=tags(x).slice(0,1);
+  const row=document.createElement('div');row.className='human-chip-row';
+  row.innerHTML=t.map(v=>`<span>${esc(v)}</span>`).join('')+(ts[0]?`<span class="tag">#${esc(ts[0])}</span>`:'')+(verified(x)?'<span class="verified">✓ Việt</span>':'');
+  b.appendChild(row);
+ });
+}
+function detailNote(){
+ const d=$('#itemDetailContent');if(!d||d.querySelector('.human-detail'))return;
+ const id=(d.querySelector('.detail-badge:nth-child(2)')?.textContent||'').replace(/\D/g,'');const x=items.find(v=>String(v.id)===id);if(!x)return;
+ const a=topAttrs(x),ts=tags(x),n=document.createElement('div');n.className='human-detail';
+ n.innerHTML=`<div class="human-detail-title">✦ Nhìn nhanh</div><p>${esc(x.name||'Item này')} thiên về <b>${esc(L[a[0]?.[0]]||'chưa xác định')}</b>${a[1]?` và <b>${esc(L[a[1][0]])}</b>`:''}. Đây là mô tả từ chính các chỉ số item, không phải đánh giá chủ quan.</p><div class="human-detail-grid"><div><small>Loại</small><b>${esc(C[x.category]||x.category||'Chưa xác minh')}</b></div><div><small>Bộ</small><b>${esc(x.suit||'Chưa gắn bộ')}</b></div><div><small>Tag</small><b>${esc(ts.length?ts.slice(0,4).join(' · '):'Chưa có')}</b></div><div><small>Xác minh</small><b>${verified(x)?'Đã đối chiếu nguồn':'Đang cần đối chiếu'}</b></div></div>`;
+ d.querySelector('.detail-main')?.appendChild(n);
+}
+async function boot(){
+ try{const r=await fetch('./data/items.json?b=20260917human1',{cache:'no-store'});if(!r.ok)return;items=normalize(await r.json());window.__aetheriaHumanItems=items;insight();
+  const obs=new MutationObserver(()=>{enrichCards();detailNote()});obs.observe(document.body,{subtree:true,childList:true});enrichCards();detailNote();
+ }catch(e){console.warn('[Aetheria human layer]',e)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
