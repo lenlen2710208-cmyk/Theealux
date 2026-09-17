@@ -1,0 +1,1 @@
+Run `node scripts/sync-annie.mjs` in an environment with Playwright Chromium installed. The script captures JSON responses from the public Annie item page and normalizes only records actually returned by the source. It does not synthesize missing records.
