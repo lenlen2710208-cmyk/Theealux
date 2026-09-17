@@ -23,7 +23,8 @@ const extractRows = json => {
   const seen = new Set(), arrays = [];
   const walk = value => {
     if (!value || typeof value !== 'object' || seen.has(value)) return;
-    seen.add(value); if (Array.isArray(value)) arrays.push(value); else for (const v of Object.values(value)) walk(v);
+    seen.add(value);
+    if (Array.isArray(value)) arrays.push(value); else for (const v of Object.values(value)) walk(v);
   };
   walk(json);
   return arrays.filter(a => a.length && a.some(x => looksLikeItem(x) >= 5)).sort((a,b) => {
@@ -36,7 +37,10 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 async function getPage(pageNumber, limit = 1000) {
   const url = `${API_URL}?page=${pageNumber}&limit=${limit}`;
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { const r = await page.request.get(url, { timeout: 30000 }); if (r.ok()) return { pageNumber, url, rows: extractRows(await r.json()) }; } catch {}
+    try {
+      const r = await page.request.get(url, { timeout: 30000 });
+      if (r.ok()) return { pageNumber, url, rows: extractRows(await r.json()) };
+    } catch {}
     await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
   }
   return { pageNumber, url, rows: [] };
@@ -46,12 +50,25 @@ console.log(`Annie probe: ${probe.rows.length} items from ${probe.url}`);
 let rawRows = probe.rows;
 if (probe.rows.length < 900) {
   const firstPageSize = Math.max(probe.rows.length, 1), all = new Map();
-  for (const x of probe.rows) { const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? ''); if (id) all.set(id, x); }
-  let pageNumber = 1, emptyStreak = 0; const batchSize = 12;
+  for (const x of probe.rows) {
+    const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
+    if (id) all.set(id, x);
+  }
+  let pageNumber = 1, emptyStreak = 0;
+  const batchSize = 12;
   while (pageNumber < 2000 && emptyStreak < 2) {
     const pages = Array.from({ length: batchSize }, (_, i) => pageNumber + i);
-    const results = await Promise.all(pages.map(p => getPage(p, firstPageSize))); let got = 0;
-    for (const result of results) { got += result.rows.length; for (const x of result.rows) { const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? ''); all.set(id || `${result.pageNumber}:${JSON.stringify(x)}`, x); } }
+    const results = await Promise.all(pages.map(p => getPage(p, firstPageSize)));
+    let got = 0;
+    for (const result of results) {
+      if (!result.rows.length) continue;
+      got += result.rows.length;
+      for (const x of result.rows) {
+        const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
+        const key = id || `${result.pageNumber}:${JSON.stringify(x)}`;
+        all.set(key, x);
+      }
+    }
     console.log(`Pages ${pages[0]}-${pages.at(-1)}: +${got}, total ${all.size}`);
     emptyStreak = got === 0 ? emptyStreak + 1 : 0;
     if (got < firstPageSize && results.some(r => r.rows.length < firstPageSize)) emptyStreak = 2;
@@ -64,17 +81,23 @@ const normalize = (x, index) => ({
   name: String(x.name ?? x.title ?? x.Name ?? x.itemName ?? x.item_name ?? '').trim(),
   category: x.category ?? x.type ?? x.Type ?? x.typeName ?? x.type_name ?? '',
   rarity: Number(x.rarity ?? x.star ?? x.stars ?? x.Rarity ?? 0) || null,
-  gorgeous: Number(x.gorgeous ?? x.Gorgeous ?? 0) || 0, simple: Number(x.simple ?? x.Simple ?? 0) || 0,
-  elegant: Number(x.elegance ?? x.Elegance ?? x.elegant ?? 0) || 0, lively: Number(x.lively ?? x.Lively ?? 0) || 0,
-  mature: Number(x.mature ?? x.Mature ?? 0) || 0, cute: Number(x.cute ?? x.Cute ?? 0) || 0,
-  sexy: Number(x.sexy ?? x.Sexy ?? 0) || 0, pure: Number(x.pure ?? x.Pure ?? 0) || 0,
-  warm: Number(x.warm ?? x.Warm ?? 0) || 0, cool: Number(x.cool ?? x.Cool ?? 0) || 0,
+  gorgeous: Number(x.gorgeous ?? x.Gorgeous ?? 0) || 0,
+  simple: Number(x.simple ?? x.Simple ?? 0) || 0,
+  elegant: Number(x.elegance ?? x.Elegance ?? x.elegant ?? 0) || 0,
+  lively: Number(x.lively ?? x.Lively ?? 0) || 0,
+  mature: Number(x.mature ?? x.Mature ?? 0) || 0,
+  cute: Number(x.cute ?? x.Cute ?? 0) || 0,
+  sexy: Number(x.sexy ?? x.Sexy ?? 0) || 0,
+  pure: Number(x.pure ?? x.Pure ?? 0) || 0,
+  warm: Number(x.warm ?? x.Warm ?? 0) || 0,
+  cool: Number(x.cool ?? x.Cool ?? 0) || 0,
   tags: Array.isArray(x.tags) ? x.tags : (x.tag ? [x.tag] : []),
   image: abs(x.image ?? x.imageUrl ?? x.img ?? x.image_url ?? x.icon ?? x.iconUrl ?? ''),
-  suit: x.suit ?? x.suitName ?? x.suit_name ?? '', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, verificationStatus: 'source-imported'
+  suit: x.suit ?? x.suitName ?? x.suit_name ?? '',
+  source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, verificationStatus: 'source-imported'
 });
-const rows = rawRows.map(normalize).filter(x => x.name);
-if (!rows.length) { await browser.close(); throw new Error('Không lấy được item từ Annie. Không tạo dữ liệu giả.'); }
+const rows = rawRows.map(normalize).filter(x => x.id && x.name);
+if (!rows.length) { await browser.close(); throw new Error('Không lấy được item từ Annie.'); }
 const payload = { version: 5, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
 await fs.mkdir(path.dirname(out), { recursive: true });
 await fs.writeFile(out, JSON.stringify(payload, null, 2));
