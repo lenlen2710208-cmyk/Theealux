@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "description": "Schema chuẩn hóa dữ liệu item cho Theealux. Chỉ nhập bản ghi đã kiểm chứng cho Ngôi Sao Thời Trang VNG.",
+  "item": {
+    "id": "string|number",
+    "name": "string",
+    "category": "string",
+    "rarity": "number|null",
+    "attributes": {"gorgeous":"number|null","simple":"number|null","elegance":"number|null","lively":"number|null","mature":"number|null","cute":"number|null","sexy":"number|null","pure":"number|null","warm":"number|null","cool":"number|null"},
+    "tags": ["string"],
+    "suit": "string|null",
+    "image": "string|null",
+    "source": "string",
+    "sourceType": "official|community|unverified",
+    "vnVerified": "boolean",
+    "notes": "string|null"
+  }
+}
