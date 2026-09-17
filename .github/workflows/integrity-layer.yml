@@ -8,6 +8,7 @@ on:
       - 'app.js'
       - 'data/stages.json'
       - 'data/stages-extra.json'
+      - '.github/workflows/integrity-layer.yml'
   workflow_dispatch:
 
 permissions:
