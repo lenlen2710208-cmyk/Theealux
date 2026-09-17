@@ -1,6 +1,8 @@
 name: Sync Vietnamese item names
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   schedule:
     - cron: '20 3 * * 1'
@@ -10,6 +12,7 @@ permissions:
 
 jobs:
   sync:
+    if: github.event_name != 'push' || github.event.head_commit.message != 'Sync Vietnamese item names'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
