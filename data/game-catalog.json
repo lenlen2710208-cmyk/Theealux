@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "locale": "vi-VN",
+  "game": "Ngôi Sao Thời Trang VNG",
+  "policy": "Mô hình hóa các trường dữ liệu thực tế của game; không tự bịa dữ liệu còn thiếu.",
+  "itemFields": ["id","name","category","rarity","gorgeous","simple","elegant","lively","mature","cute","sexy","pure","warm","cool","tags","suit","image","source","sourceUrl","verificationStatus"],
+  "attributeLabels": {"gorgeous":"Quý phái","simple":"Đơn giản","elegant":"Thanh lịch","lively":"Năng động","mature":"Trưởng thành","cute":"Dễ thương","sexy":"Gợi cảm","pure":"Trong sáng","warm":"Giữ ấm","cool":"Mát mẻ"},
+  "catalogSections": [
+    {"id":"items","label":"Kho đồ","fields":["name","category","rarity","attributes","tags","suit","image","source"]},
+    {"id":"suits","label":"Bộ sưu tập / Trang phục","fields":["suit","items","image"]},
+    {"id":"stages","label":"Chặng đấu","hierarchy":"Quyển → Chương → Ải"},
+    {"id":"competition","label":"Khu thi đấu","hierarchy":"Khu thi đấu → Chủ đề"},
+    {"id":"aihoi","label":"Ải hội","hierarchy":"Ải hội → Chương → Ải"},
+    {"id":"wardrobe","label":"Tủ đồ","fields":["owned","unowned"]},
+    {"id":"sources","label":"Cách nhận / Nguồn","fields":["source","sourceUrl","verificationStatus"]}
+  ],
+  "scoring": {"rule":"Xếp hạng tham khảo dùng trọng số thuộc tính của stage/theme tương ứng; không gọi chỉ số này là điểm trận đấu khi chưa có công thức VNG được xác minh."},
+  "releasePolicy": {"vietnamOnly":true,"excludeUnreleasedVietnamContent":true,"quyen3":false}
+}
