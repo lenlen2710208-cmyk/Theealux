@@ -2,18 +2,10 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const URL = process.env.SOURCE_URL || 'https://annie-nikki.homes/items';
+const PAGE_URL = process.env.SOURCE_URL || 'https://annie-nikki.homes/items';
+const API_URL = 'https://annie-nikki.homes/api/items';
 const out = path.resolve('data/items.json');
-const abs = (u) => { try { return new URL(u, URL).href } catch { return u || '' } };
-
-const arrays = (value, seen = new Set()) => {
-  if (!value || typeof value !== 'object' || seen.has(value)) return [];
-  seen.add(value);
-  const out = [];
-  if (Array.isArray(value)) out.push(value);
-  for (const v of Object.values(value)) out.push(...arrays(v, seen));
-  return out;
-};
+const abs = (u) => { try { return new URL(u, PAGE_URL).href; } catch { return u || ''; } };
 
 const isObject = x => x && typeof x === 'object' && !Array.isArray(x);
 const keysOf = x => isObject(x) ? Object.keys(x).map(k => k.toLowerCase()) : [];
@@ -30,78 +22,80 @@ const looksLikeItem = x => {
   return score;
 };
 
-const scoreArray = rows => {
-  if (!Array.isArray(rows) || rows.length < 2) return { score: -1, itemLike: 0 };
-  const sample = rows.slice(0, Math.min(rows.length, 200));
-  const itemLike = sample.reduce((n, x) => n + (looksLikeItem(x) >= 5 ? 1 : 0), 0);
-  const avg = sample.reduce((n, x) => n + looksLikeItem(x), 0) / sample.length;
-  return { score: itemLike * 1000 + avg * 100 + Math.min(rows.length, 100000) / 1000, itemLike };
+const extractRows = json => {
+  const seen = new Set();
+  const arrays = [];
+  const walk = value => {
+    if (!value || typeof value !== 'object' || seen.has(value)) return;
+    seen.add(value);
+    if (Array.isArray(value)) arrays.push(value);
+    else for (const v of Object.values(value)) walk(v);
+  };
+  walk(json);
+  return arrays
+    .filter(a => a.length && a.some(x => looksLikeItem(x) >= 5))
+    .sort((a,b) => {
+      const sa = a.filter(x => looksLikeItem(x) >= 5).length;
+      const sb = b.filter(x => looksLikeItem(x) >= 5).length;
+      return sb - sa || b.length - a.length;
+    })[0] || [];
 };
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-const candidates = [];
-const seenUrls = new Set();
 
-const inspectJson = (json, url) => {
-  for (const rows of arrays(json)) {
-    const s = scoreArray(rows);
-    if (s.score >= 0) candidates.push({ url, rows, ...s });
-  }
-};
-
-page.on('response', async response => {
-  const type = response.headers()['content-type'] || '';
-  const u = response.url();
-  if (type.includes('json') || /api|items|wardrobe|data/i.test(u)) {
+async function getPage(pageNumber, limit = 1000) {
+  const url = `${API_URL}?page=${pageNumber}&limit=${limit}`;
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const text = await response.text();
-      if (text.length < 50_000_000) {
-        const json = JSON.parse(text);
-        inspectJson(json, u);
+      const r = await page.request.get(url, { timeout: 30000 });
+      if (r.ok()) {
+        const json = await r.json();
+        const rows = extractRows(json);
+        return { pageNumber, url, rows };
       }
     } catch {}
+    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
   }
-});
-
-await page.goto(URL, { waitUntil: 'networkidle', timeout: 120000 });
-await page.waitForTimeout(5000);
-
-const resources = await page.evaluate(() => performance.getEntriesByType('resource').map(x => x.name));
-const scripts = [...new Set(resources.filter(u => /\.(js|json)(\?|$)|\/api\//i.test(u)))];
-
-for (const u of scripts) {
-  try {
-    const text = await page.evaluate(async u => { try { return await (await fetch(u)).text(); } catch { return ''; } }, u);
-    const matches = [...text.matchAll(/(?:https?:\/\/[^"'`\s]+|\/api\/[A-Za-z0-9_?=&/.:-]+)/g)]
-      .map(m => m[0].replace(/[),;]+$/, ''));
-    for (const raw of matches) {
-      const endpoint = abs(raw);
-      if (seenUrls.has(endpoint)) continue;
-      seenUrls.add(endpoint);
-      try {
-        const r = await page.request.get(endpoint, { timeout: 20000 });
-        const ct = r.headers()['content-type'] || '';
-        if (r.ok() && ct.includes('json')) inspectJson(await r.json(), endpoint);
-      } catch {}
-    }
-  } catch {}
+  return { pageNumber, url, rows: [] };
 }
 
-const embedded = await page.evaluate(() => [...document.querySelectorAll('script[type="application/json"]')].map(x => x.textContent || ''));
-for (const text of embedded) { try { inspectJson(JSON.parse(text), 'embedded'); } catch {} }
+// First ask for a large page. If Annie caps it, fall back to normal pagination.
+const probe = await getPage(0, 1000);
+console.log(`Annie probe: ${probe.rows.length} items from ${probe.url}`);
 
-const ranked = candidates
-  .filter(c => c.itemLike > 0)
-  .sort((a, b) => b.score - a.score);
+let rawRows = probe.rows;
+if (probe.rows.length < 900) {
+  const firstPageSize = Math.max(probe.rows.length, 1);
+  const all = new Map();
+  for (const x of probe.rows) {
+    const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
+    if (id) all.set(id, x);
+  }
 
-console.log('Annie payload candidates:');
-for (const c of ranked.slice(0, 12)) console.log(JSON.stringify({ url: c.url, rows: c.rows.length, itemLike: c.itemLike, score: c.score }));
-
-const best = ranked[0];
-if (!best?.rows?.length || best.itemLike === 0) {
-  await browser.close();
-  throw new Error('Không tìm thấy payload item JSON phù hợp từ Annie. Không tạo dữ liệu giả.');
+  let pageNumber = 1;
+  let emptyStreak = 0;
+  const batchSize = 12;
+  while (pageNumber < 2000 && emptyStreak < 2) {
+    const pages = Array.from({ length: batchSize }, (_, i) => pageNumber + i);
+    const results = await Promise.all(pages.map(p => getPage(p, firstPageSize)));
+    let got = 0;
+    for (const result of results) {
+      if (!result.rows.length) continue;
+      got += result.rows.length;
+      for (const x of result.rows) {
+        const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
+        const key = id || `${result.pageNumber}:${JSON.stringify(x)}`;
+        all.set(key, x);
+      }
+    }
+    console.log(`Pages ${pages[0]}-${pages.at(-1)}: +${got}, total ${all.size}`);
+    emptyStreak = got === 0 ? emptyStreak + 1 : 0;
+    if (got < firstPageSize && results.some(r => r.rows.length < firstPageSize)) emptyStreak = 2;
+    pageNumber += batchSize;
+    if (got === 0) break;
+  }
+  rawRows = [...all.values()];
 }
 
 const normalize = (x, index) => ({
@@ -123,18 +117,24 @@ const normalize = (x, index) => ({
   image: abs(x.image ?? x.imageUrl ?? x.img ?? x.image_url ?? x.icon ?? x.iconUrl ?? ''),
   suit: x.suit ?? x.suitName ?? x.suit_name ?? '',
   source: 'Annie Nikki Homes',
-  sourceUrl: URL,
+  sourceUrl: PAGE_URL,
   verificationStatus: 'source-imported'
 });
 
-const rows = best.rows.map(normalize).filter(x => x.name || x.image);
+const rows = rawRows.map(normalize).filter(x => x.name || x.image);
+if (rows.length === 0) {
+  await browser.close();
+  throw new Error('Không lấy được item từ Annie. Không tạo dữ liệu giả.');
+}
+
 const payload = {
-  version: 4,
+  version: 5,
   game: 'Ngôi Sao Thời Trang VNG',
   locale: 'vi-VN',
   source: 'Annie Nikki Homes',
-  sourceUrl: URL,
+  sourceUrl: PAGE_URL,
   fetchedAt: new Date().toISOString(),
+  targetCount: 32561,
   count: rows.length,
   items: rows
 };
@@ -142,5 +142,5 @@ const payload = {
 await fs.mkdir(path.dirname(out), { recursive: true });
 await fs.writeFile(out, JSON.stringify(payload, null, 2));
 await browser.close();
-console.log(`Imported ${rows.length} items from ${best.url}`);
-if (rows.length < 30000) console.warn(`Nguồn hiện trả về dưới 30.000 item; giữ dữ liệu thật, không bơm item giả.`);
+console.log(`Imported ${rows.length} unique items from Annie API.`);
+if (rows.length < 30000) console.warn(`Nguồn hiện thu được ${rows.length} item; tiếp tục giữ dữ liệu thật, không bơm item giả.`);
