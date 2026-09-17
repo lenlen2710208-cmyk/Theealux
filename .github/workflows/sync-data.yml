@@ -37,9 +37,10 @@ jobs:
         run: |
           git config user.name 'Aetheria Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add data/items.json
-          git diff --cached --quiet || git commit -m 'data: sync real item data from Annie'
           git fetch origin main
-          git rebase origin/main
+          git reset --hard origin/main
+          git add data/items.json
+          git diff --cached --quiet && echo 'No dataset changes' && exit 0
+          git commit -m 'data: sync real item data from Annie'
           git push origin HEAD:main
-          # Dataset sync is intentionally source-only; no generated rankings are invented here.
+          # Dataset sync is source-only; no generated rankings are invented here.
