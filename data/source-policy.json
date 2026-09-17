@@ -1,0 +1,15 @@
+{
+  "project": "Theealux",
+  "game": "Ngôi Sao Thời Trang VNG",
+  "locale": "vi-VN",
+  "targetItemCount": 32561,
+  "policy": "verified-only",
+  "primaryReference": "https://annie-nikki.homes/",
+  "officialGame": "https://ngoisao.vnggames.com/",
+  "notes": [
+    "Không sinh dữ liệu item giả.",
+    "Không coi dữ liệu quốc tế là dữ liệu VNG Việt Nam nếu chưa đối chiếu.",
+    "Mỗi item cần source, sourceId và verificationStatus.",
+    "Ảnh chỉ dùng URL đã xác định từ nguồn công khai; không tự đoán URL ảnh."
+  ]
+}
