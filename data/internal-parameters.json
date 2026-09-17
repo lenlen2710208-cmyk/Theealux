@@ -1,19 +1,16 @@
 {
-  "version": 1,
+  "version": 2,
   "game": "Ngôi Sao Thời Trang VNG",
   "locale": "vi-VN",
-  "status": "partial-source-index",
-  "purpose": "Kho internal parameter được xác minh từ các bảng public; không dùng dữ liệu thiếu để giả lập điểm.",
-  "source": {
-    "name": "Gamerch — Miracle Nikki",
-    "url": "https://gamerch.com/miracle-nikki/590539",
-    "note": "Bảng internal parameter công khai của bản Miracle Nikki tham khảo; chưa mặc định đồng nhất với dữ liệu máy chủ VNG Việt Nam."
-  },
-  "attributes": ["gorgeous","simple","elegant","lively","mature","cute","sexy","pure","warm","cool"],
-  "parts": {
-    "hair": "https://gamerch.com/miracle-nikki/entry/590539",
-    "dress": "https://gamerch.com/miracle-nikki/590540",
-    "bottom": "https://gamerch.com/miracle-nikki/590543"
-  },
-  "scoringPolicy": "Chỉ dùng để tính điểm thật khi item có đủ internal parameter và stage có đủ hệ số cần thiết; nếu không thì không xếp Top 20."
+  "status": "source-index",
+  "purpose": "Chỉ mục nguồn internal parameter đã xác minh; dữ liệu điểm thật chỉ được bật khi ánh xạ được item Việt Nam và đủ đầu vào của từng chặng.",
+  "sources": [
+    {"name":"Gamerch — Hair internal parameters","url":"https://gamerch.com/miracle-nikki/entry/590539","scope":"hair"},
+    {"name":"Gamerch — Dress internal parameters","url":"https://gamerch.com/miracle-nikki/590540","scope":"dress"},
+    {"name":"Gamerch — Bottom internal parameters","url":"https://gamerch.com/miracle-nikki/590543","scope":"bottom"},
+    {"name":"BWIKI — Clothing encyclopedia","url":"https://wiki.biligame.com/qjnn/%E8%A1%A3%E6%9C%8D%E5%9B%BE%E9%89%B4","scope":"item identity, attributes, categories and images"}
+  ],
+  "mappingRule": "Không ghép tên item giữa các ngôn ngữ bằng suy đoán. Chỉ tạo record internal khi có khóa/ID hoặc đối chiếu tên được xác minh.",
+  "scoringRule": "Không mở Top 20 battle score nếu thiếu internal parameter của item hoặc thiếu hệ số stage/tag/judgment/opponent-skill tương ứng.",
+  "records": []
 }
