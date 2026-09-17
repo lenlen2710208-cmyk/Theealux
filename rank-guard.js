@@ -1,87 +1,24 @@
-/* Aetheria ranking integrity layer: never present a proxy attribute sum as real battle score. */
+/* Aetheria UI + ranking integrity layer. Never present a proxy attribute sum as real battle score. */
 (function(){
-  const BUILD='2026.09.17-r78';
-  const esc2=v=>String(v??'').replace(/[&<>\\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]||c));
-  function chapterOf(s){
-    const text=String(s?.label||s?.name||'');
-    const m=text.match(/Chương\s*(\d+)/i); if(m)return `Chương ${m[1]}`;
-    const id=String(s?.id||''); const v=id.match(/^v\d+-(\d+)-/i); if(v)return `Chương ${v[1]}`;
-    const g=id.match(/^(?:guild|aihoi|gh|g)-(\d+)/i); if(g)return `Chương ${g[1]}`;
-    return 'Khác';
-  }
-  function exactItemData(x){return !!x && !!(x.internalParams||x.internal||x.internal_parameters||x.internalScore||x.scoreParams||x.partScores)}
-  function exactStageData(s){return !!s && !!s.attrs && !!(s.judgmentCoefficients||s.judgementCoefficients||s.judgment||s.opponent||s.opponentScore||s.opponentSkills||s.skillEffects||s.tagCoefficients)}
-  function exactReady(stage){return !!stage && exactStageData(stage) && Array.isArray(items) && items.length>0 && items.some(exactItemData)}
-  function removeLegacySelector(){document.querySelector('#rankStageSelect')?.remove()}
-  function setBuildStatus(){
-    const host=document.querySelector('#heroStatus'); if(!host)return;
-    let el=host.querySelector('.build-status');
-    if(!el){el=document.createElement('div');el.className='build-status';host.appendChild(el)}
-    el.textContent=`✓ Aetheria ${BUILD} • dữ liệu không giả lập`;
-  }
-  function ensureLimitSelector(){
-    const bar=document.querySelector('.rank-toolbar'); if(!bar)return;
-    let sel=document.querySelector('#rankLimit');
-    if(!sel){
-      const label=document.createElement('label');label.className='rank-limit-wrap';label.innerHTML='<span>Hiển thị</span><select id="rankLimit" aria-label="Số lượng item xếp hạng"><option value="20">Top 20</option><option value="50">Top 50</option><option value="100">Top 100</option></select>';
-      bar.appendChild(label);sel=label.querySelector('select');
-      sel.value=localStorage.getItem('aetheria_rank_limit')||'20';
-      sel.onchange=()=>{localStorage.setItem('aetheria_rank_limit',sel.value);window.renderRank()};
-    }
-  }
-  function ensureHierarchy(){
-    removeLegacySelector(); ensureLimitSelector();
-    const cat=document.querySelector('#rankCategory'); if(!cat)return;
-    let wrap=document.querySelector('#rankStageHierarchy');
-    if(!wrap){wrap=document.createElement('div');wrap.id='rankStageHierarchy';wrap.className='rank-stage-hierarchy';cat.insertAdjacentElement('afterend',wrap)}
-    const stages=(stageData?.stages||[]).filter(s=>s.group===currentRank);
-    const isCompetition=currentRank==='thidau';
-    const chapters=[...new Set(stages.map(chapterOf))];
-    const oldStage=window.__aetheriaSelectedStage||'';
-    wrap.innerHTML='<select id="rankChapterSelect" aria-label="Chọn chương"></select><select id="rankExactStageSelect" aria-label="Chọn ải hoặc chủ đề"></select>';
-    const ch=document.querySelector('#rankChapterSelect'),st=document.querySelector('#rankExactStageSelect');
-    ch.innerHTML=chapters.length?chapters.map(v=>`<option value="${esc2(v)}">${esc2(isCompetition?'Chủ đề':v)}</option>`).join(''):'<option value="">Chưa có dữ liệu</option>';
-    const wanted=stages.find(s=>s.id===oldStage);if(wanted)ch.value=chapterOf(wanted);
-    function fill(){
-      const list=stages.filter(s=>chapterOf(s)===(ch.value||chapters[0]));
-      st.innerHTML=list.length?list.map(s=>`<option value="${esc2(s.id)}">${esc2(s.label||s.name||s.id)}</option>`).join(''):'<option value="">Chưa có ải đã xác minh</option>';
-      if(list.some(s=>s.id===oldStage))st.value=oldStage;
-      window.__aetheriaSelectedStage=st.value||'';
-    }
-    fill();
-    ch.onchange=()=>{window.__aetheriaSelectedStage='';fill();window.renderRank()};
-    st.onchange=()=>{window.__aetheriaSelectedStage=st.value;window.renderRank()};
-  }
-  window.aetheriaRankingReady=exactReady;
-  window.aetheriaStageChapter=chapterOf;
-  window.aetheriaExactItem=exactItemData;
-  window.aetheriaExactStage=exactStageData;
-  window.setupAetheriaRankingHierarchy=ensureHierarchy;
-  window.renderRank=function(){
-    ensureHierarchy();setBuildStatus();
-    const grid=document.querySelector('#rankingGrid'),info=document.querySelector('#rankInfo'),desc=document.querySelector('#rankDescription');
-    if(!grid)return;
-    const id=window.__aetheriaSelectedStage||document.querySelector('#rankExactStageSelect')?.value;
-    const stage=(stageData?.stages||[]).find(s=>s.id===id);
-    const limit=Number(document.querySelector('#rankLimit')?.value||20);
-    if(!stage){grid.innerHTML='<div class="empty"><b>Chưa có chặng đã xác minh.</b><br>Aetheria không tự tạo Top khi thiếu dữ liệu chặng.</div>';if(info)info.textContent='Chưa có dữ liệu chặng';return}
-    if(!exactReady(stage)){
-      grid.innerHTML=`<div class="empty"><b>Chưa mở Top ${limit} thật cho ${esc2(stage.label||stage.name||stage.id)}.</b><br>Thiếu dữ liệu điểm nội bộ của item và/hoặc hệ số phán định, điểm đối thủ, kỹ năng và hệ số tag cần để tái hiện cơ chế tính điểm game.<br><strong>Aetheria không dùng phép cộng 10 thuộc tính để giả làm điểm trận đấu.</strong><br><br><span>Top 20 / 50 / 100 đã sẵn sàng ở giao diện; bảng chỉ mở khi dữ liệu tính điểm được xác minh.</span></div>`;
-      if(info)info.textContent=`Top ${limit} • Chưa đủ dữ liệu tính điểm thật`;
-      if(desc)desc.textContent=`${stage.label} — ${stage.name}. Chọn Top 20 / 50 / 100; Aetheria chỉ công bố thứ hạng khi đủ dữ liệu game.`;
-      return;
-    }
-    grid.innerHTML='<div class="empty"><b>Đã đủ đầu vào tính điểm thật.</b><br>Bộ máy đang hoàn thiện phép tính theo từng vị trí trang phục; chưa phát hành điểm giả lập.</div>';
-    if(info)info.textContent=`Top ${limit} • Đã đủ đầu vào — chưa phát hành điểm giả lập`;
-  };
-  window.optimize=function(){
-    const out=document.querySelector('#optimizerResult');if(!out)return;
-    const id=window.__aetheriaSelectedStage||document.querySelector('#rankExactStageSelect')?.value;
-    const stage=(stageData?.stages||[]).find(s=>s.id===id);
-    if(!stage){out.textContent='Chọn một chặng cụ thể để kiểm tra dữ liệu.';return}
-    if(!exactReady(stage)){out.innerHTML=`<b>${esc2(stage.label||stage.name||stage.id)}</b><br><span>Chưa đủ dữ liệu để tính điểm chiến đấu thật.</span><small>Không dùng chỉ số phù hợp 10 thuộc tính làm điểm trận đấu.</small>`;return}
-    out.innerHTML='<b>Đã đủ dữ liệu đầu vào.</b><br>Bộ tối ưu sẽ chỉ chạy khi đủ internal của item, hệ số chặng/tag, hệ số phán định và dữ liệu kỹ năng/đối thủ.';
-  };
-  function bootGuard(){setBuildStatus();window.renderRank();window.optimize()}
-  setTimeout(bootGuard,0);
+const BUILD='2026.09.17-r81';
+const esc=v=>String(v??'').replace(/[&<>\\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]||c));
+const chapterOf=s=>{const t=String(s?.label||s?.name||''),m=t.match(/Chương\s*(\d+)/i);if(m)return `Chương ${m[1]}`;const id=String(s?.id||''),v=id.match(/^v\d+-(\d+)-/i);if(v)return `Chương ${v[1]}`;const g=id.match(/^(?:guild|aihoi|gh|g)-(\d+)/i);if(g)return `Chương ${g[1]}`;return 'Khác'};
+const exactItem=x=>!!x&&(!!x.internalParams||!!x.internal||!!x.internal_parameters||!!x.internalScore||!!x.scoreParams||!!x.partScores);
+const exactStage=s=>!!s&&!!s.attrs&&!!(s.judgmentCoefficients||s.judgementCoefficients||s.judgment||s.opponent||s.opponentScore||s.opponentSkills||s.skillEffects||s.tagCoefficients);
+const ready=s=>!!s&&exactStage(s)&&Array.isArray(items)&&items.length>0&&items.some(exactItem);
+function premium(){if(document.getElementById('aetheria-r81-style'))return;const st=document.createElement('style');st.id='aetheria-r81-style';st.textContent=`
+.section{animation:aetheria-in .65s ease both}@keyframes aetheria-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.topbar{backdrop-filter:blur(18px) saturate(1.2);transition:box-shadow .25s,background .25s}.topbar.scrolled{box-shadow:0 12px 35px rgba(70,40,48,.13)}
+.sparkle{animation:aetheria-spark 1.8s ease-in-out infinite}.art-glow{animation:aetheria-glow 4s ease-in-out infinite}@keyframes aetheria-spark{0%,100%{opacity:.35;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(18deg)}}@keyframes aetheria-glow{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.05);opacity:.95}}
+.item-card,.feature-card,.source-card,.stage-panel,.hero-card{transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}.item-card:hover,.feature-card:hover,.source-card:hover{transform:translateY(-6px);box-shadow:0 18px 45px rgba(91,55,64,.14)}
+.rank-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.rank-toolbar select{min-width:150px}.rank-stage-hierarchy{display:contents}.rank-limit-wrap{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted,#7b6b6f);font-weight:700}.rank-limit-wrap select{min-width:110px}.rank-card{animation:aetheria-card .45s ease both}@keyframes aetheria-card{from{opacity:0;transform:translateY(9px) scale(.985)}to{opacity:1;transform:none}}
+.build-status{font-size:11px!important;opacity:.8;margin-top:5px}.data-integrity{margin-top:8px;padding:9px 11px;border:1px solid var(--line,#e7d8d0);border-radius:12px;background:var(--card2,#fcf3ed);font-size:12px}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+`;document.head.appendChild(st);window.addEventListener('scroll',()=>document.querySelector('.topbar')?.classList.toggle('scrolled',scrollY>8),{passive:true})}
+function status(){const h=document.querySelector('#heroStatus');if(!h)return;let e=h.querySelector('.build-status');if(!e){e=document.createElement('div');e.className='build-status';h.appendChild(e)}e.textContent=`✓ Aetheria ${BUILD} • kho dữ liệu không bị cắt`}
+function hierarchy(){document.querySelector('#rankStageSelect')?.remove();const cat=document.querySelector('#rankCategory');if(!cat)return;let w=document.querySelector('#rankStageHierarchy');if(!w){w=document.createElement('div');w.id='rankStageHierarchy';w.className='rank-stage-hierarchy';cat.insertAdjacentElement('afterend',w)}const stages=(stageData?.stages||[]).filter(s=>s.group===currentRank),comp=currentRank==='thidau',chapters=[...new Set(stages.map(chapterOf))],old=window.__aetheriaSelectedStage||'';w.innerHTML='<select id="rankChapterSelect" aria-label="Chọn chương hoặc chủ đề"></select><select id="rankExactStageSelect" aria-label="Chọn ải hoặc chủ đề cụ thể"></select>';const ch=document.querySelector('#rankChapterSelect'),st=document.querySelector('#rankExactStageSelect');ch.innerHTML=chapters.length?chapters.map(x=>`<option value="${esc(x)}">${esc(comp?'Chủ đề':x)}</option>`).join(''):'<option value="">Chưa có dữ liệu</option>';const wanted=stages.find(s=>s.id===old);if(wanted)ch.value=chapterOf(wanted);const fill=()=>{const list=stages.filter(s=>chapterOf(s)===(ch.value||chapters[0]));st.innerHTML=list.length?list.map(s=>`<option value="${esc(s.id)}">${esc(s.label||s.name||s.id)}</option>`).join(''):'<option value="">Chưa có ải đã xác minh</option>';if(list.some(s=>s.id===old))st.value=old;window.__aetheriaSelectedStage=st.value||''};fill();ch.onchange=()=>{window.__aetheriaSelectedStage='';fill();window.renderRank()};st.onchange=()=>{window.__aetheriaSelectedStage=st.value;window.renderRank()}}
+function limit(){const n=Number(document.querySelector('#rankLimit')?.value||20);return [20,50,100].includes(n)?n:20}
+window.aetheriaRankingReady=ready;window.aetheriaExactItem=exactItem;window.aetheriaExactStage=exactStage;window.aetheriaStageChapter=chapterOf;window.setupAetheriaRankingHierarchy=hierarchy;
+window.renderRank=function(){premium();status();hierarchy();const grid=document.querySelector('#rankingGrid'),info=document.querySelector('#rankInfo'),desc=document.querySelector('#rankDescription');if(!grid)return;const stage=(stageData?.stages||[]).find(s=>s.id===(window.__aetheriaSelectedStage||document.querySelector('#rankExactStageSelect')?.value)),n=limit();if(!stage){grid.innerHTML='<div class="empty"><b>Chọn chương và ải/chủ đề.</b><br>Aetheria không tự tạo bảng khi chưa có chặng xác minh.</div>';if(info)info.textContent='Chưa chọn chặng';return}if(!ready(stage)){grid.innerHTML=`<div class="empty"><b>Top ${n} chưa mở cho ${esc(stage.label||stage.name||stage.id)}.</b><br>Kho item vẫn giữ nguyên. Bảng điểm thật đang khóa vì thiếu internal item và/hoặc hệ số phán định, đối thủ, kỹ năng, tag cần thiết.<br><strong>Không dùng phép cộng 10 thuộc tính để giả làm điểm trận đấu.</strong></div>`;if(info)info.textContent=`Kho ${items.length.toLocaleString('vi-VN')} item • Top ${n} chờ dữ liệu điểm thật`;if(desc)desc.textContent=`${stage.label||stage.name} — chỉ công bố xếp hạng khi đủ đầu vào game.`;return}grid.innerHTML='<div class="empty"><b>Đã đủ đầu vào tính điểm.</b><br>Bộ máy tính điểm thật đang được hoàn thiện; chưa phát hành điểm giả lập.</div>';if(info)info.textContent=`Top ${n} • đầu vào đã đủ`};
+window.optimize=function(){const out=document.querySelector('#optimizerResult');if(!out)return;const stage=(stageData?.stages||[]).find(s=>s.id===(window.__aetheriaSelectedStage||document.querySelector('#rankExactStageSelect')?.value));out.innerHTML=stage&&!ready(stage)?`<b>${esc(stage.label||stage.name)}</b><br>Chưa đủ dữ liệu tính điểm chiến đấu thật. Kho item không bị xóa.`:'Chọn một chặng cụ thể để kiểm tra dữ liệu.'};
+setTimeout(()=>{premium();status();window.renderRank()},80);
 })();
