@@ -1,0 +1,1 @@
+Theealux data is populated by `.github/workflows/sync-data.yml` from the public Annie Nikki Homes item source. The sync never fabricates records: if the source cannot be read, the workflow fails. `data/items.json` is the generated dataset.
