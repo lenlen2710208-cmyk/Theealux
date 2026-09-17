@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "game": "Ngôi Sao Thời Trang VNG",
+  "locale": "vi-VN",
+  "source": "",
+  "verified": false,
+  "note": "Stage-specific data is intentionally empty until a Vietnamese VNG source can be verified. No fabricated rankings are published.",
+  "stages": []
+}
