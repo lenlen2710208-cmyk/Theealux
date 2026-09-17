@@ -51,7 +51,7 @@ let rawRows = probe.rows;
 if (probe.rows.length < 900) {
   const firstPageSize = Math.max(probe.rows.length, 1), all = new Map();
   for (const x of probe.rows) {
-    const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
+    const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '').trim();
     if (id) all.set(id, x);
   }
   let pageNumber = 1, emptyStreak = 0;
@@ -64,9 +64,8 @@ if (probe.rows.length < 900) {
       if (!result.rows.length) continue;
       got += result.rows.length;
       for (const x of result.rows) {
-        const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '');
-        const key = id || `${result.pageNumber}:${JSON.stringify(x)}`;
-        all.set(key, x);
+        const id = String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '').trim();
+        if (id) all.set(id, x);
       }
     }
     console.log(`Pages ${pages[0]}-${pages.at(-1)}: +${got}, total ${all.size}`);
@@ -76,8 +75,8 @@ if (probe.rows.length < 900) {
   }
   rawRows = [...all.values()];
 }
-const normalize = (x, index) => ({
-  id: String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? index + 1),
+const normalize = (x) => ({
+  id: String(x.id ?? x.itemId ?? x.ID ?? x.code ?? x.item_id ?? '').trim(),
   name: String(x.name ?? x.title ?? x.Name ?? x.itemName ?? x.item_name ?? '').trim(),
   category: x.category ?? x.type ?? x.Type ?? x.typeName ?? x.type_name ?? '',
   rarity: Number(x.rarity ?? x.star ?? x.stars ?? x.Rarity ?? 0) || null,
@@ -96,11 +95,17 @@ const normalize = (x, index) => ({
   suit: x.suit ?? x.suitName ?? x.suit_name ?? '',
   source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, verificationStatus: 'source-imported'
 });
-const rows = rawRows.map(normalize).filter(x => x.id && x.name);
-if (!rows.length) { await browser.close(); throw new Error('Không lấy được item từ Annie.'); }
-const payload = { version: 5, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
+const normalized = rawRows.map(normalize);
+const unique = new Map();
+for (const item of normalized) {
+  if (!item.id || !item.name) continue;
+  if (!unique.has(item.id)) unique.set(item.id, item);
+}
+const rows = [...unique.values()];
+if (!rows.length) { await browser.close(); throw new Error('Không lấy được item hợp lệ từ Annie.'); }
+const payload = { version: 6, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, items: rows };
 await fs.mkdir(path.dirname(out), { recursive: true });
 await fs.writeFile(out, JSON.stringify(payload, null, 2));
 await browser.close();
-console.log(`Imported ${rows.length} unique named items from Annie API.`);
+console.log(`Imported ${rows.length} valid unique items from Annie API.`);
 if (rows.length < 30000) console.warn(`Nguồn hiện thu được ${rows.length} item; không bơm item giả.`);
