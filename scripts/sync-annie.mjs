@@ -36,12 +36,13 @@ const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 async function getPage(pageNumber, limit = 1000) {
   const url = `${API_URL}?page=${pageNumber}&limit=${limit}`;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const r = await page.request.get(url, { timeout: 30000 });
       if (r.ok()) return { pageNumber, url, rows: extractRows(await r.json()) };
-    } catch {}
-    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      console.warn(`Annie HTTP ${r.status()} on page ${pageNumber}, attempt ${attempt + 1}`);
+    } catch (e) { console.warn(`Annie request failed on page ${pageNumber}, attempt ${attempt + 1}: ${e.message}`); }
+    await new Promise(r => setTimeout(r, 1200 * (attempt + 1)));
   }
   return { pageNumber, url, rows: [] };
 }
@@ -112,7 +113,7 @@ console.log(`With any real attribute: ${withAnyAttributes}`);
 console.log(`With all 10 attributes: ${withAllAttributes}`);
 console.log(`With 5+ non-zero attributes: ${withFiveOrMoreAttributes}`);
 console.log(`Annie displayed target reference: 32561`);
-const payload = { version: 8, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, attributeCoverage: { withAnyAttributes, withAllAttributes, withFiveOrMoreAttributes }, items: rows };
+const payload = { version: 9, game: 'Ngôi Sao Thời Trang VNG', locale: 'vi-VN', source: 'Annie Nikki Homes', sourceUrl: PAGE_URL, fetchedAt: new Date().toISOString(), targetCount: 32561, count: rows.length, attributeCoverage: { withAnyAttributes, withAllAttributes, withFiveOrMoreAttributes }, items: rows };
 await fs.mkdir(path.dirname(out), { recursive: true });
 await fs.writeFile(out, JSON.stringify(payload));
 await browser.close();
