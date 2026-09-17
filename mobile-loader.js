@@ -1,0 +1,1 @@
+(()=>{const add=()=>{if(document.getElementById('aetheriaMobilePerf'))return;const l=document.createElement('link');l.id='aetheriaMobilePerf';l.rel='stylesheet';l.href='mobile-performance.css?v=r100';document.head.appendChild(l)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add,{once:true});else add()})();
