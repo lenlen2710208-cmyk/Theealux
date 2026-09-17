@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'scripts/sync-annie.mjs'
+      - 'scripts/validate-dataset.mjs'
       - '.github/workflows/sync-data.yml'
   schedule:
     - cron: '17 3 * * *'
@@ -12,11 +13,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: aetheria-data-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -28,9 +35,11 @@ jobs:
         run: node scripts/validate-dataset.mjs
       - name: Commit verified source data
         run: |
-          git config user.name 'Theealux Bot'
+          git config user.name 'Aetheria Bot'
           git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main
+          git rebase origin/main
           git add data/items.json
           git diff --cached --quiet && exit 0
           git commit -m 'data: sync real item data from Annie'
-          git push
+          git push origin HEAD:main
