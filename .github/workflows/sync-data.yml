@@ -37,9 +37,8 @@ jobs:
         run: |
           git config user.name 'Aetheria Bot'
           git config user.email 'actions@users.noreply.github.com'
+          git add data/items.json
+          git diff --cached --quiet || git commit -m 'data: sync real item data from Annie'
           git fetch origin main
           git rebase origin/main
-          git add data/items.json
-          git diff --cached --quiet && exit 0
-          git commit -m 'data: sync real item data from Annie'
           git push origin HEAD:main
