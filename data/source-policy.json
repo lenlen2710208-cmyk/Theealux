@@ -1,21 +1,17 @@
 {
-  "project": "Aetheria",
-  "game": "Ngôi Sao Thời Trang VNG",
-  "locale": "vi-VN",
-  "targetItemCount": 32561,
-  "policy": "verified-only",
-  "primaryReferences": [
-    "https://ngoisao.vnggames.com/",
-    "https://vn.nikkis.info/",
-    "https://wiki.biligame.com/qjnn/%E9%A6%96%E9%A1%B5",
-    "https://miracle-nikki.fandom.com/wiki/Miracle_Nikki_Wiki"
-  ],
-  "officialGame": "https://ngoisao.vnggames.com/",
-  "notes": [
+  "project":"Aetheria",
+  "game":"Ngôi Sao Thời Trang VNG",
+  "locale":"vi-VN",
+  "policy":"source-traceable-fields",
+  "minimumCatalogRecords":30000,
+  "primaryReferences":["https://ngoisao.vnggames.com/","https://annie-nikki.homes/items","https://wiki.biligame.com/qjnn/","https://miracle-nikki.fandom.com/wiki/Miracle_Nikki_Wiki"],
+  "officialGame":"https://ngoisao.vnggames.com/",
+  "notes":[
     "Không sinh dữ liệu item giả.",
-    "Không coi dữ liệu quốc tế là dữ liệu VNG Việt Nam nếu chưa đối chiếu.",
-    "Nguồn tham khảo được quản lý tập trung; không hiển thị nguồn trên từng thẻ item.",
-    "Ảnh chỉ dùng URL đã xác định từ nguồn công khai; không tự đoán URL ảnh.",
-    "Xếp hạng theo chặng chỉ được hiển thị khi có dữ liệu yêu cầu chặng đã xác minh."
+    "Không hard-code mục tiêu 32.561; số lượng catalog được đọc trực tiếp từ data/items.json.",
+    "Tên Việt là lớp đối chiếu riêng; item chưa có tên Việt không bị xóa.",
+    "Ảnh dùng URL nguồn công khai; lỗi ảnh có ảnh dự phòng.",
+    "Xếp hạng chỉ là tham khảo theo thuộc tính và trọng số chặng, không phải điểm trận đấu chính thức của VNG.",
+    "Khu thi đấu dùng thứ tự thuộc tính chủ đề làm trọng số tham khảo, không giả định công thức máy chủ."
   ]
 }
