@@ -1,4 +1,4 @@
-name: Enrich all item attributes
+name: Enrich all item metadata
 
 on:
   push:
@@ -15,12 +15,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: aetheria-attribute-enrichment
-  cancel-in-progress: false
+  group: aetheria-item-enrichment
+  cancel-in-progress: true
 
 jobs:
   enrich:
-    if: github.event_name != 'push' || !contains(github.event.head_commit.message, 'Enrich item attributes')
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, 'Enrich complete item metadata')
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -32,20 +32,25 @@ jobs:
         with:
           node-version: 22
 
-      - name: Scan every item page
+      - name: Enrich attributes, suits and tags
         env:
           CONCURRENCY: 16
-          TIMEOUT: 20000
+          TIMEOUT: 25000
+          MAX_RETRIES: 4
         run: node scripts/enrich-item-attributes.mjs
 
-      - name: Commit attribute catalog
+      - name: Validate enriched file
+        run: |
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('data/items-enriched.json','utf8'));const a=Array.isArray(x)?x:x.items;if(!Array.isArray(a)||a.length<30000)throw new Error('Enriched dataset is unexpectedly small');console.log('enriched items:',a.length)"
+
+      - name: Commit enriched catalog
         run: |
           git config user.name "Aetheria Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/item-attribute-grades.json
+          git add data/items-enriched.json
           if git diff --cached --quiet; then
-            echo "No attribute changes."
+            echo "No metadata changes."
           else
-            git commit -m "Enrich item attributes"
+            git commit -m "Enrich complete item metadata"
             git push
           fi
