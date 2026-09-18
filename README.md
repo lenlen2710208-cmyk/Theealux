@@ -1,42 +1,31 @@
 # Theealux / Aetheria
 
-Website fan-made dành cho người chơi **Ngôi Sao Thời Trang VNG** tại Việt Nam. Thương hiệu hiển thị trên website: **Aetheria**.
+Website fan-made dành cho người chơi **Ngôi Sao Thời Trang VNG** tại Việt Nam.
 
-## Trạng thái hiện tại
-- Build giao diện: **r97**.
-- Kho dữ liệu repository hiện có **37.589 bản ghi item**; không còn hard-code con số mục tiêu cũ.
-- Mobile-first, giao diện warm/editorial, dark mode, tủ đồ cá nhân và tìm kiếm nhanh.
-- Bảng xếp hạng: **Quyển 1, Quyển 2, Ải hội, Khu thi đấu**; hỗ trợ Top 20/50/100 và lọc theo loại đồ.
-- Xếp hạng tham khảo tự ưu tiên chỉ số số học nếu có; khi chỉ số số chưa được điền, hệ thống dùng **hạng thuộc tính SS → E đã đối chiếu** để sắp xếp theo trọng số của chặng. Đây là chỉ số tham khảo, không phải điểm trận đấu VNG.
-- Chi tiết item hiển thị 10 thuộc tính theo thuật ngữ Việt: **Quý phái, Đơn giản, Thanh lịch, Năng động, Trưởng thành, Dễ thương, Gợi cảm, Trong sáng, Giữ ấm, Mát mẻ**.
-- Dữ liệu hạng thuộc tính được quét tự động từ các trang item công khai của Annie Nikki Homes và lưu riêng tại `data/item-attribute-grades.json`, không sửa thành số giả trong `items.json`.
-- GitHub Actions tự quét phần thuộc tính còn thiếu và chạy định kỳ hàng tuần.
-- Tên Việt được đồng bộ riêng theo ID để tránh phải viết lại file item lớn.
-- Hình ảnh ưu tiên URL nguồn công khai; Aetheria không tự nhận quyền sở hữu tài nguyên game.
+## Trạng thái
+- Frontend hiện dùng **một runtime duy nhất: `aetheria-final.js`**; các lớp vá runtime cũ không còn được nạp trong `index.html`.
+- Mobile-first: tìm kiếm, kho item, tủ đồ cục bộ, chi tiết item, bảng xếp hạng và công cụ chặng dùng chung một pipeline dữ liệu.
+- Catalog hiện tại: **37.589 bản ghi**, được đọc trực tiếp từ `data/items.json`; không hard-code 32.561.
+- Tên Việt được lưu riêng trong `data/vietnamese-names.json`; file hiện ghi nhận **5.702 tên đã khớp**. Đây không phải tuyên bố rằng mọi item đều đã được VNG xác nhận riêng.
+- 10 thuật ngữ: **Quý phái, Đơn giản, Thanh lịch, Năng động, Trưởng thành, Dễ thương, Gợi cảm, Trong sáng, Giữ ấm, Mát mẻ**.
+- Xếp hạng là **tham khảo** từ thuộc tính item + trọng số chặng. Website không gọi đó là điểm trận đấu chính thức của VNG.
+- Khu thi đấu lấy thứ tự thuộc tính chủ đề làm trọng số tham khảo, không giả định công thức điểm kín của máy chủ.
 
-## Kiến trúc dữ liệu
+## Dữ liệu
+- `data/items.json` — catalog item.
+- `data/vietnamese-names.json` — tên Việt theo ID.
+- `data/stages.json` + `data/stages-extra.json` — chặng và trọng số tham khảo.
+- `data/source-policy.json` — phạm vi và nguyên tắc nguồn.
+- `data/schema.json` + `data/items.schema.json` — schema; khóa thuộc tính dùng `elegant` cho **Thanh lịch**.
 
-- `data/items.json` — catalog item chính.
-- `data/vietnamese-names.json` — tên Việt đối chiếu theo ID.
-- `data/item-attribute-grades.json` — hạng 10 thuộc tính được quét từ nguồn item công khai.
-- `data/stages.json` + `data/stages-extra.json` — chặng, chủ đề và trọng số.
-- `data/stage-structure.json` — cấu trúc **Quyển → Chương → Ải** và **Khu thi đấu → Chủ đề**.
-- `data/game-catalog.json` — từ điển các trường dữ liệu mà Aetheria theo dõi.
-- `scripts/enrich-item-attributes.mjs` — bộ quét thuộc tính toàn kho.
-- `.github/workflows/enrich-item-attributes.yml` — tự động chạy bộ quét và commit dữ liệu mới.
-
-## Nguyên tắc dữ liệu
-
-Aetheria ưu tiên dữ liệu có thể truy nguyên. Nếu nguồn không cung cấp một trường, website để trống hoặc ghi rõ chưa đối chiếu thay vì tự bịa. Đặc biệt, hạng chữ SS/S/A/B/C/D/E chỉ được dùng để **xếp thứ tự tham khảo**; không quy đổi thành “điểm game chính thức”.
+## Kiểm tra
+GitHub Pages chạy `scripts/validate-dataset.mjs` trước khi deploy. Validator kiểm tra JSON, ID trùng, tên rỗng, rarity, 10 thuộc tính, image/source fields và count.
 
 ## Nguồn tham khảo
-
-- Ngôi Sao Thời Trang VNG: https://ngoisao.vnggames.com/
-- Annie Nikki Homes: https://annie-nikki.homes/items
-- BWIKI / Bilibili Game: https://wiki.biligame.com/qjnn/
-- Miracle Nikki Wiki: https://miracle-nikki.fandom.com/wiki/Miracle_Nikki_Wiki
-- Gamerch: https://gamerch.com/miracle-nikki/589252
+- **Ngôi Sao Thời Trang VNG:** nguồn chính thức tại Việt Nam.
+- **Annie Nikki Homes:** kho fan-made tiếng Việt; trang chủ hiện hiển thị 32.561 trang phục và công cụ tối ưu chặng.
+- **BWIKI / Bilibili Game:** đối chiếu dữ liệu cộng đồng.
+- **Miracle Nikki Wiki / Gamerch:** đối chiếu thuộc tính, chặng và cơ chế công khai khi cần.
 
 ## Bản quyền
-
-Thealux/Aetheria là dự án fan-made độc lập. Tên, hình ảnh và tài nguyên game thuộc chủ sở hữu tương ứng. Website không phải sản phẩm chính thức của VNG Corporation.
+Theealux/Aetheria là dự án fan-made độc lập, không thuộc VNG Corporation. Tên, hình ảnh và tài nguyên game thuộc chủ sở hữu tương ứng.
